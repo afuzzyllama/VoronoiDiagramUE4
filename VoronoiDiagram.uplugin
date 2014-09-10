@@ -1,0 +1,21 @@
+{
+	"FileVersion" : 3,
+	
+	"FriendlyName" : "Voronoi Module",
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"CreatedBy" : "afuzzyllama",
+	"CreatedByURL" : "http://www.pixelsforglory.com",
+	"EngineVersion" : "4.4.0",
+	"Description" : "Module for generating data for voronoi diagrams",
+	"Category" : "Pixels For Glory.Procedural",
+	"EnabledByDefault" : true,
+	
+	"Modules" :
+	[
+		{
+			"Name" : "VoronoiDiagram",
+			"Type" : "Runtime"
+		}
+	]
+}

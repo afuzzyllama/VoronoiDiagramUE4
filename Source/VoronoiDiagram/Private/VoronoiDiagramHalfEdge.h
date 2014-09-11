@@ -4,45 +4,22 @@
 class FVoronoiDiagramHalfEdge
 {
 public:
-    static TSharedPtr<FVoronoiDiagramHalfEdge> CreateEmptyHalfEdgePtr();
-    static TSharedPtr<FVoronoiDiagramHalfEdge> CreateHalfEdgePtr(TSharedPtr<class FVoronoiDiagramEdge> Edge, int32 LeftRight);
-    static void AttemptToReset(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge);
+    static TSharedPtr<FVoronoiDiagramHalfEdge> CreatePtr(TSharedPtr<class FVoronoiDiagramEdge> Edge, EVoronoiDiagramEdge::Type EdgeType);
 
-    bool IsLeftOf(FVector2D Point) const;
-
-    float GetYStar() const;
-    void SetYStar(float NewYStar);
+    bool IsLeftOf(TSharedPtr<class FVoronoiDiagramPoint> Point);
+    bool IsRightOf(TSharedPtr<class FVoronoiDiagramPoint> Point);
     
-    TSharedPtr<class FVoronoiDiagramVertex> GetVertex() const;
-    void SetVertex(TSharedPtr<class FVoronoiDiagramVertex> NewVertex);
+    TSharedPtr<class FVoronoiDiagramEdge> Edge;
+    EVoronoiDiagramEdge::Type EdgeType;
 
-    TSharedPtr<FVoronoiDiagramEdge> GetEdge();
-    void SetEdge(TSharedPtr<FVoronoiDiagramEdge> NewEdge);
-    
-    int32 GetLeftRight();
+    TSharedPtr<FVoronoiDiagramPoint> Vertex;
+    float YStar;
 
-    TSharedPtr<FVoronoiDiagramHalfEdge> GetLeftNeighbor() const;
-    void SetLeftNeighbor(TSharedPtr<FVoronoiDiagramHalfEdge> NewHalfEdge);
-
-    TSharedPtr<FVoronoiDiagramHalfEdge> GetRightNeighbor() const;
-    void SetRightNeighbor(TSharedPtr<FVoronoiDiagramHalfEdge> NewHalfEdge);
-    
-    TSharedPtr<FVoronoiDiagramHalfEdge> GetNextInQueue() const;
-    void SetNextInQueue(TSharedPtr<FVoronoiDiagramHalfEdge> NewHalfEdge);
-
-    FString ToString();
+    TSharedPtr<FVoronoiDiagramHalfEdge> EdgeListLeft;
+    TSharedPtr<FVoronoiDiagramHalfEdge> EdgeListRight;
+    TSharedPtr<FVoronoiDiagramHalfEdge> NextInPriorityQueue;
 
 private:
-    float YStar;
-    TSharedPtr<class FVoronoiDiagramVertex> Vertex;
-    TSharedPtr<class FVoronoiDiagramEdge> Edge;
-    TArray<TSharedPtr<class FVoronoiDiagramSite>> Sites;
-    int32 LeftRight;
-
-    TSharedPtr<FVoronoiDiagramHalfEdge> LeftNeighbor;
-    TSharedPtr<FVoronoiDiagramHalfEdge> RightNeighbor;
-    TSharedPtr<FVoronoiDiagramHalfEdge> NextInQueue;
-
-    FVoronoiDiagramHalfEdge();
-    FVoronoiDiagramHalfEdge(TSharedPtr<class FVoronoiDiagramEdge> InEdge, int32 InLeftRight);
+    // Never want to create a half edge directly since we are dealing with pointers
+    FVoronoiDiagramHalfEdge(TSharedPtr<class FVoronoiDiagramEdge> InEdge, EVoronoiDiagramEdge::Type InEdgeType);
 };

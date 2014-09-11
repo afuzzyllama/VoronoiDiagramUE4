@@ -12,12 +12,12 @@ void FVoronoiDiagramModule::StartupModule()
 void FVoronoiDiagramModule::ShutdownModule()
 {}
 
-FVoronoiDiagram Generate(FIntRect Bounds, TArray<FIntPoint>& Points)
-{
-    FVoronoiDiagram VoronoiDiagram(Bounds);
-    VoronoiDiagram.AddPoints(Points);
-    
-    return VoronoiDiagram;
-
-}
+//FVoronoiDiagram Generate(FIntRect Bounds, TArray<FIntPoint>& Points)
+//{
+//    FVoronoiDiagram VoronoiDiagram(Bounds);
+//    VoronoiDiagram.AddPoints(Points);
+//    
+//    return VoronoiDiagram;
+//
+//}
 #undef LOCTEXT_NAMESPACE

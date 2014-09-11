@@ -1,47 +1,40 @@
 // Copyright 2014 afuzzyllama. All Rights Reserved.
 #pragma once
 
+namespace EVoronoiDiagramEdge
+{
+    enum Type
+    {
+        None,
+        Left,
+        Right
+    };
+}
+
 class FVoronoiDiagramEdge
 {
 public:
-    static TSharedPtr<FVoronoiDiagramEdge> CreateBisectingEdge(TSharedPtr<FVoronoiDiagramSite> SiteA, TSharedPtr<FVoronoiDiagramSite> SiteB);
-    static TSharedPtr<FVoronoiDiagramEdge> CreateEdgePtr(TSharedPtr<FVoronoiDiagramEdge> Edge, int32 LeftRight);
-    
-    void MarkReadyForDeletion();
-    bool IsReadyForDeletion() const;
-
-    TSharedPtr<class FVoronoiDiagramSite> GetLeftSite() const;
-    void SetLeftSite(TSharedPtr<class FVoronoiDiagramSite> NewSite);
-
-    TSharedPtr<class FVoronoiDiagramSite> GetRightSite() const;
-    void SetRightSite(TSharedPtr<class FVoronoiDiagramSite> NewSite);
-
-    TSharedPtr<class FVoronoiDiagramVertex> GetLeftVertex() const;
-    void SetLeftVertex(TSharedPtr<class FVoronoiDiagramVertex> NewVertex);
-    
-    TSharedPtr<class FVoronoiDiagramVertex> GetRightVertex() const;
-    void SetRightVertex(TSharedPtr<class FVoronoiDiagramVertex> NewVertex);
-
-    void ClipVertices(FIntRect Bounds);
-
-    // the equation of the edge: ax + by = c
-	float a, b, c;
-
-    TArray<FIntPoint> GetClippedVertices() const;
-    
-    FString ToString();
-
-private:
-    TArray<FIntPoint> ClippedVertices;
-
-    bool bReadyForDeletion;
-    TSharedPtr<class FVoronoiDiagramSite> LeftSite;
-    TSharedPtr<class FVoronoiDiagramSite> RightSite;
-    
-    TSharedPtr<class FVoronoiDiagramVertex> LeftVertex;
-    TSharedPtr<class FVoronoiDiagramVertex> RightVertex;
-    
-
+    static TSharedPtr<FVoronoiDiagramEdge> Bisect(TSharedPtr<class FVoronoiDiagramPoint> SiteA, TSharedPtr<class FVoronoiDiagramPoint> SiteB);
 
     FVoronoiDiagramEdge();
+    
+    bool IsDeleted();
+    void MarkForDeletion();
+    
+    void SetEndpoint(TSharedPtr<class FVoronoiDiagramPoint> Vertex, EVoronoiDiagramEdge::Type EdgeType);
+
+    int32 EdgeIndex;
+
+    // The equation of the edge: ax + by = c
+    float a, b, c;
+    
+    TSharedPtr<class FVoronoiDiagramPoint> LeftEndPoint;
+    TSharedPtr<class FVoronoiDiagramPoint> RightEndPoint;
+    
+    TSharedPtr<class FVoronoiDiagramPoint> LeftRegion;
+    TSharedPtr<class FVoronoiDiagramPoint> RightRegion;
+    
+    bool bMarkedForDeletion;
+    
+
 };

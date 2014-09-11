@@ -39,5 +39,5 @@ public:
 	virtual void ShutdownModule() override;
     // End IModuleInterface implementation
 
-    FVoronoiDiagram Generate(int32 DimensionLength, TArray<FVector2D>& Points);
+//    FVoronoiDiagram Generate(int32 DimensionLength, TArray<FVector2D>& Points);
 };

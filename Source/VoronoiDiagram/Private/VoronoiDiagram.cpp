@@ -13,16 +13,12 @@ public:
     TArray<TSharedPtr<FVoronoiDiagramHalfEdge>> Hash;
     TSharedPtr<FVoronoiDiagramHalfEdge> LeftEnd;
     TSharedPtr<FVoronoiDiagramHalfEdge> RightEnd;
-    TSharedPtr<FVoronoiDiagramPoint> BottomMostSite;
     TSharedPtr<FVector2D> MinimumValues, DeltaValues;
     
     FVoronoiDiagramEdgeList(int32 NumberOfSites, TSharedPtr<FVector2D> InMinimumValues, TSharedPtr<FVector2D> InDeltaValues)
     : MinimumValues(InMinimumValues)
     , DeltaValues(InDeltaValues)
-    , BottomMostSite(nullptr)
     {
-        check(NumberOfSites >= 1);
-        
         for(int32 i = 0; i < 2 * FMath::Sqrt(NumberOfSites); ++i)
         {
             Hash.Add(nullptr);
@@ -53,47 +49,11 @@ public:
     {
         HalfEdge->EdgeListLeft->EdgeListRight = HalfEdge->EdgeListRight;
         HalfEdge->EdgeListRight->EdgeListLeft = HalfEdge->EdgeListLeft;
-        
-        HalfEdge->Edge->MarkForDeletion();
-        
+        HalfEdge->Edge = FVoronoiDiagramEdge::DELETED;
         HalfEdge->EdgeListLeft = nullptr;
         HalfEdge->EdgeListRight = nullptr;
     }
-    
-    TSharedPtr<FVoronoiDiagramPoint> GetLeftRegion(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
-    {
-        if(HalfEdge->Edge.IsValid() == false)
-        {
-            return BottomMostSite;
-        }
-        
-        if(HalfEdge->EdgeType == EVoronoiDiagramEdge::Left)
-        {
-            return HalfEdge->Edge->LeftRegion;
-        }
-        else
-        {
-            return HalfEdge->Edge->RightRegion;
-        }
-    }
-    
-    TSharedPtr<FVoronoiDiagramPoint> GetRightRegion(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
-    {
-        if(HalfEdge->Edge.IsValid() == false)
-        {
-            return BottomMostSite;
-        }
-        
-        if(HalfEdge->EdgeType == EVoronoiDiagramEdge::Right)
-        {
-            return HalfEdge->Edge->LeftRegion;
-        }
-        else
-        {
-            return HalfEdge->Edge->RightRegion;
-        }
-    }
-    
+
     TSharedPtr<FVoronoiDiagramHalfEdge> GetFromHash(int32 Bucket)
     {
         TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge;
@@ -104,7 +64,7 @@ public:
         }
         
         HalfEdge = Hash[Bucket];
-        if(HalfEdge.IsValid() && HalfEdge->Edge.IsValid() && HalfEdge->Edge->IsDeleted() == true)
+        if(HalfEdge.IsValid() && HalfEdge->Edge == FVoronoiDiagramEdge::DELETED)
         {
             // Edge ready for deletion, return null instead
             Hash[Bucket] = nullptr;
@@ -116,12 +76,12 @@ public:
         return HalfEdge;
     }
     
-    TSharedPtr<FVoronoiDiagramHalfEdge> GetLeftBoundFrom(TSharedPtr<FVoronoiDiagramPoint> Point)
+    TSharedPtr<FVoronoiDiagramHalfEdge> GetLeftBoundFrom(FVector2D Point)
     {
         int32 Bucket;
         TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge;
         
-        Bucket = (Point->Coordinate.X - MinimumValues->X) / DeltaValues->X * Hash.Num();
+        Bucket = (Point.X - MinimumValues->X) / DeltaValues->X * Hash.Num();
         
         if(Bucket < 0)
         {
@@ -164,7 +124,7 @@ public:
         }
         
         // If we are at the left end or if we are not at the right end of the half edge is left of the passed in point
-        if(HalfEdge == LeftEnd || (HalfEdge != RightEnd && HalfEdge->IsLeftOf(Point)))
+        if(HalfEdge.Get() == LeftEnd.Get() || (HalfEdge.Get() != RightEnd.Get() && HalfEdge->IsLeftOf(Point)))
         {
             do
             {
@@ -203,16 +163,17 @@ public:
 class FVoronoiDiagramPriorityQueue
 {
 public:
-    int32 MinimumIndex, NumberUsed;
+    int32 MinimumBucket, Count;
     TArray<TSharedPtr<FVoronoiDiagramHalfEdge>> Hash;
     TSharedPtr<FVector2D> MinimumValues, DeltaValues;
     
     FVoronoiDiagramPriorityQueue(int32 NumberOfSites, TSharedPtr<FVector2D> InMinimumValues, TSharedPtr<FVector2D> InDeltaValues)
-    : MinimumIndex(0)
-    , NumberUsed(0)
-    , MinimumValues(InMinimumValues)
+    : MinimumValues(InMinimumValues)
     , DeltaValues(InDeltaValues)
+    , MinimumBucket(0)
+    , Count(0)
     {
+        // Create an array full of dummies that represent the beginning of a bucket
         for(int32 i = 0; i < 4 * FMath::Sqrt(NumberOfSites); ++i)
         {
             Hash.Add(FVoronoiDiagramHalfEdge::CreatePtr(nullptr, EVoronoiDiagramEdge::None));
@@ -238,92 +199,177 @@ public:
         return Bucket;
     }
     
-    void Insert(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge, TSharedPtr<FVoronoiDiagramPoint> Vertex, float Offset)
+    void Insert(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
     {
-        TSharedPtr<FVoronoiDiagramHalfEdge> Prev, Next;
+        TSharedPtr<FVoronoiDiagramHalfEdge> Previous, Next;
         int32 InsertionBucket = GetBucket(HalfEdge);
         
-        if(InsertionBucket < MinimumIndex)
+        if(InsertionBucket < MinimumBucket)
         {
-            MinimumIndex = InsertionBucket;
+            MinimumBucket = InsertionBucket;
         }
-       
-        HalfEdge->YStar = Vertex->Coordinate.Y + Offset;
-        HalfEdge->Vertex = Vertex;
-        
-        Prev = Hash[InsertionBucket];
-        Next = Prev->NextInPriorityQueue;
+     
+        // Start at the beginning of the bucket and find where the half edge should go
+        Previous = Hash[InsertionBucket];
+        Next = Previous->NextInPriorityQueue;
         while(
             Next.IsValid() &&
             (
                 HalfEdge->YStar > Next->YStar ||
-                (HalfEdge->YStar == Next->YStar && HalfEdge->Vertex->Coordinate.X > Next->Vertex->Coordinate.X)
+                (HalfEdge->YStar == Next->YStar && HalfEdge->Vertex->GetCoordinate().X > Next->Vertex->GetCoordinate().X)
             )
         )
         {
-            Prev = Next;
-            Next = Prev->NextInPriorityQueue;
+            Previous = Next;
+            Next = Previous->NextInPriorityQueue;
         }
         
-        HalfEdge->NextInPriorityQueue = Prev->NextInPriorityQueue;
-        Prev->NextInPriorityQueue = HalfEdge;
-        NumberUsed++;
+        HalfEdge->NextInPriorityQueue = Previous->NextInPriorityQueue;
+        Previous->NextInPriorityQueue = HalfEdge;
+        Count++;
+        
+//        UE_LOG(LogVoronoiDiagram, Log, TEXT("InsertionBucket: %i"), InsertionBucket );
+//        for(int32 i = 0; i < Hash.Num(); ++i)
+//        {
+//            UE_LOG(LogVoronoiDiagram, Log, TEXT("Bucket[%i]"), i);
+//            
+//            TSharedPtr<FVoronoiDiagramHalfEdge> Current = Hash[i]->NextInPriorityQueue;
+//            while(Current.IsValid())
+//            {
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("%p"), Current.Get());
+//                Current = Current->NextInPriorityQueue;
+//            }
+//        }
+//        UE_LOG(LogVoronoiDiagram, Log, TEXT("PQ Insert: Count %i"), Count);
     }
     
     void Delete(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
     {
-        TSharedPtr<FVoronoiDiagramHalfEdge> Prev;
+        TSharedPtr<FVoronoiDiagramHalfEdge> Previous;
         int32 RemovalBucket = GetBucket(HalfEdge);
         
         if(HalfEdge->Vertex.IsValid())
         {
-            Prev = Hash[RemovalBucket];
-            while(Prev->NextInPriorityQueue != HalfEdge)
+            Previous = Hash[RemovalBucket];
+            while(Previous->NextInPriorityQueue != HalfEdge)
             {
-                Prev = Prev->NextInPriorityQueue;
+                Previous = Previous->NextInPriorityQueue;
             }
-            Prev->NextInPriorityQueue = HalfEdge->NextInPriorityQueue;
-            NumberUsed--;
+            
+            Previous->NextInPriorityQueue = HalfEdge->NextInPriorityQueue;
+            Count--;
             
             HalfEdge->Vertex = nullptr;
-            HalfEdge->NextInPriorityQueue = nullptr;
+            HalfEdge->NextInPriorityQueue;
             
-            if(!HalfEdge->EdgeListLeft.IsValid() && !HalfEdge->EdgeListRight.IsValid())
+            if(!HalfEdge->HasReferences())
             {
-                HalfEdge->Edge = nullptr;
                 HalfEdge.Reset();
             }
+            
+//            Prev = nullptr;
+//            for(int32 i = 0; i < Hash.Num(); ++i)
+//            {
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("Bucket[%i]"), i);
+//                
+//                TSharedPtr<FVoronoiDiagramHalfEdge> Current = Hash[i]->NextInPriorityQueue;
+//                while(Current.IsValid())
+//                {
+//                    if(Current.Get() == HalfEdge.Get())
+//                    {
+//                        Prev = Current;
+//                        break;
+//                    }
+//                    Current = Current->NextInPriorityQueue;
+//                }
+//                
+//                if(Prev.IsValid())
+//                {
+//                    break;
+//                }
+//            }
+//            
+//            if(!Prev.IsValid())
+//            {
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("Vertex doesn't exist in the PQ"));
+//                check(false);
+//            }
+            
+//            Prev = Hash[RemovalBucket];
+//            while(Prev->NextInPriorityQueue.Get() != HalfEdge.Get())
+//            {
+//                Prev = Prev->NextInPriorityQueue;
+//            }
+
+//            Prev->NextInPriorityQueue = HalfEdge->NextInPriorityQueue;
+//            NumberUsed--;
+//            
+//            HalfEdge->Vertex = nullptr;
+//            HalfEdge->NextInPriorityQueue = nullptr;
+//            
+//            if(!HalfEdge->EdgeListLeft.IsValid() && !HalfEdge->EdgeListRight.IsValid())
+//            {
+//                HalfEdge->Edge = nullptr;
+//                HalfEdge.Reset();
+//            }
+            
+//            UE_LOG(LogVoronoiDiagram, Log, TEXT("RemovalBucket: %i"), RemovalBucket );
+//            for(int32 i = 0; i < Hash.Num(); ++i)
+//            {
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("Bucket[%i]"), i);
+//                
+//                TSharedPtr<FVoronoiDiagramHalfEdge> Current = Hash[i]->NextInPriorityQueue;
+//                while(Current.IsValid())
+//                {
+//                    UE_LOG(LogVoronoiDiagram, Log, TEXT("%p"), Current.Get());
+//                    Current = Current->NextInPriorityQueue;
+//                }
+//            }
+//            UE_LOG(LogVoronoiDiagram, Log, TEXT("PQ Delete: Count %i"), Count);
         }
     }
     
     bool IsEmpty()
     {
-        return NumberUsed == 0;
+        return Count == 0;
     }
     
-    FVoronoiDiagramPoint GetMinimumPoint()
+    FVector2D GetMinimumBucketFirstPoint()
     {
-        while(MinimumIndex < Hash.Num() - 1 && !Hash[MinimumIndex]->NextInPriorityQueue.IsValid())
+        while(MinimumBucket < Hash.Num() - 1 && !Hash[MinimumBucket]->NextInPriorityQueue.IsValid())
         {
-            MinimumIndex++;
+            MinimumBucket++;
         }
 
-        FVoronoiDiagramPoint MinPoint;
-        
-        MinPoint.Coordinate = FVector2D(Hash[MinimumIndex]->NextInPriorityQueue->Vertex->Coordinate.X, Hash[MinimumIndex]->NextInPriorityQueue->YStar);
-
-        return MinPoint;
+        return FVector2D(
+            Hash[MinimumBucket]->NextInPriorityQueue->Vertex->GetCoordinate().X,
+            Hash[MinimumBucket]->NextInPriorityQueue->YStar
+        );
     }
     
-    TSharedPtr<FVoronoiDiagramHalfEdge> RemoveAndReturnMinimumEdge()
+    TSharedPtr<FVoronoiDiagramHalfEdge> RemoveAndReturnMinimum()
     {
         TSharedPtr<FVoronoiDiagramHalfEdge> MinEdge;
-        
-        MinEdge = Hash[MinimumIndex]->NextInPriorityQueue;
-        Hash[MinimumIndex]->NextInPriorityQueue = MinEdge->NextInPriorityQueue;
-        NumberUsed--;
+
+        MinEdge = Hash[MinimumBucket]->NextInPriorityQueue;
+        Hash[MinimumBucket]->NextInPriorityQueue = MinEdge->NextInPriorityQueue;
+        Count--;
         
         MinEdge->NextInPriorityQueue = nullptr;
+        
+//        UE_LOG(LogVoronoiDiagram, Log, TEXT("Minimum Bucket: %i"), MinimumBucket);
+//        for(int32 i = 0; i < Hash.Num(); ++i)
+//        {
+//            UE_LOG(LogVoronoiDiagram, Log, TEXT("Bucket[%i]"), i);
+//            
+//            TSharedPtr<FVoronoiDiagramHalfEdge> Current = Hash[i]->NextInPriorityQueue;
+//            while(Current.IsValid())
+//            {
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("%p"), Current.Get());
+//                Current = Current->NextInPriorityQueue;
+//            }
+//        }
+//        UE_LOG(LogVoronoiDiagram, Log, TEXT("PQ Remove Min Edge: Count %i"), Count);
         
         return MinEdge;
     }
@@ -352,29 +398,29 @@ bool FVoronoiDiagram::AddPoints(TArray<FIntPoint>& Points)
     for(auto Itr(Points.CreateConstIterator()); Itr; ++Itr)
     {
         FIntPoint CurrentPoint = *Itr;
-        Sites.Add(FVoronoiDiagramPoint::CreatePtr(Sites.Num(), EVoronoiDiagramPoint::Site, FVector2D(static_cast<float>(CurrentPoint.X), static_cast<float>(CurrentPoint.Y))));
+        Sites.Add(FVoronoiDiagramSite::CreatePtr(Sites.Num(), FVector2D(static_cast<float>(CurrentPoint.X), static_cast<float>(CurrentPoint.Y))));
     }
     
     struct FSortSite
     {
-        bool operator()(const TSharedPtr<FVoronoiDiagramPoint>& A, const TSharedPtr<FVoronoiDiagramPoint>& B) const
+        bool operator()(const TSharedPtr<FVoronoiDiagramSite>& A, const TSharedPtr<FVoronoiDiagramSite>& B) const
         {
-            if(FMath::RoundToInt(A->Coordinate.Y) < FMath::RoundToInt(B->Coordinate.Y))
+            if(FMath::RoundToInt(A->GetCoordinate().Y) < FMath::RoundToInt(B->GetCoordinate().Y))
             {
                 return true;
             }
             
-            if(FMath::RoundToInt(A->Coordinate.Y) > FMath::RoundToInt(B->Coordinate.Y))
+            if(FMath::RoundToInt(A->GetCoordinate().Y) > FMath::RoundToInt(B->GetCoordinate().Y))
             {
                 return false;
             }
             
-            if(FMath::RoundToInt(A->Coordinate.X) < FMath::RoundToInt(B->Coordinate.X))
+            if(FMath::RoundToInt(A->GetCoordinate().X) < FMath::RoundToInt(B->GetCoordinate().X))
             {
                 return true;
             }
             
-            if(FMath::RoundToInt(A->Coordinate.X) > FMath::RoundToInt(B->Coordinate.X))
+            if(FMath::RoundToInt(A->GetCoordinate().X) > FMath::RoundToInt(B->GetCoordinate().X))
             {
                 return false;
             }
@@ -389,7 +435,7 @@ bool FVoronoiDiagram::AddPoints(TArray<FIntPoint>& Points)
     for(auto Itr(Sites.CreateConstIterator()); Itr; ++Itr)
     {
 //        UE_LOG(LogVoronoiDiagram, Log, TEXT("Site: %i @ %i, %i"), (*Itr)->GetIndex(), (*Itr)->GetCoordinate().X, (*Itr)->GetCoordinate().Y);
-        FVector2D CurrentPoint = (*Itr)->Coordinate;
+        FVector2D CurrentPoint = (*Itr)->GetCoordinate();
         if(CurrentPoint.X < CurrentMin.X)
         {
             CurrentMin.X = CurrentPoint.X;
@@ -415,74 +461,91 @@ bool FVoronoiDiagram::AddPoints(TArray<FIntPoint>& Points)
     MaxValues = MakeShareable(new FVector2D(CurrentMax));
     DeltaValues = MakeShareable(new FVector2D(CurrentMax.X - CurrentMin.X, CurrentMax.Y - CurrentMin.Y));
     
-    for(auto Itr(Sites.CreateConstIterator()); Itr; ++Itr)
-    {
-        FVector2D CurrentPoint = (*Itr)->Coordinate;
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("Point (%f, %f)"), CurrentPoint.X, CurrentPoint.Y);
-    }
+//    for(auto Itr(Sites.CreateConstIterator()); Itr; ++Itr)
+//    {
+//        FVector2D CurrentPoint = (*Itr)->Coordinate;
+//        UE_LOG(LogVoronoiDiagram, Log, TEXT("Point (%f, %f)"), CurrentPoint.X, CurrentPoint.Y);
+//    }
     
-    UE_LOG(LogVoronoiDiagram, Log, TEXT("Min Values: %f, %f"), MinValues->X, MinValues->Y);
-    UE_LOG(LogVoronoiDiagram, Log, TEXT("Max Values: %f, %f"), MaxValues->X, MaxValues->Y);
-    UE_LOG(LogVoronoiDiagram, Log, TEXT("Delta Values: %f, %f"), DeltaValues->X, DeltaValues->Y);
+//    UE_LOG(LogVoronoiDiagram, Log, TEXT("Min Values: %f, %f"), MinValues->X, MinValues->Y);
+//    UE_LOG(LogVoronoiDiagram, Log, TEXT("Max Values: %f, %f"), MaxValues->X, MaxValues->Y);
+//    UE_LOG(LogVoronoiDiagram, Log, TEXT("Delta Values: %f, %f"), DeltaValues->X, DeltaValues->Y);
     return true;
 }
 
 void FVoronoiDiagram::GenerateEdges()
 {
+    // Fortune's Algorithm
     int32 NumGeneratedEdges = 0;
     int32 NumGeneratedVertices = 0;
     CurrentSiteIndex = 0;
 
-    // Fortune's Algorithm
     FVoronoiDiagramPriorityQueue PriorityQueue(Sites.Num(), MinValues, DeltaValues);
     FVoronoiDiagramEdgeList EdgeList(Sites.Num(), MinValues, DeltaValues);
 
-
-    FVoronoiDiagramPoint CurrentIntersectionStar;
-    TSharedPtr<FVoronoiDiagramPoint> Bottom, Top, TempPoint, v, Vertex;
+    FVector2D CurrentIntersectionStar;
+    TSharedPtr<FVoronoiDiagramSite> CurrentSite, BottomSite, TopSite, TempSite;
+    TSharedPtr<FVoronoiDiagramVertex> v, Vertex;
     TSharedPtr<FVoronoiDiagramHalfEdge> LeftBound, RightBound, LeftLeftBound, RightRightBound, Bisector;
     TSharedPtr<FVoronoiDiagramEdge> Edge;
     EVoronoiDiagramEdge::Type EdgeType;
+    
+    TArray<TSharedPtr<FVoronoiDiagramEdge>> GeneratedEdges;
 
     bool bDone = false;
-    EdgeList.BottomMostSite = GetNextSite();
-    TSharedPtr<FVoronoiDiagramPoint> CurrentSite = GetNextSite();
+    BottomMostSite = GetNextSite();
+    CurrentSite = GetNextSite();
     while(!bDone)
     {
         if(!PriorityQueue.IsEmpty())
         {
-            CurrentIntersectionStar = PriorityQueue.GetMinimumPoint();
+            CurrentIntersectionStar = PriorityQueue.GetMinimumBucketFirstPoint();
         }
         
         if(
             CurrentSite.IsValid() &&
             (
                 PriorityQueue.IsEmpty() ||
-                CurrentSite->Coordinate.Y < CurrentIntersectionStar.Coordinate.Y ||
+                CurrentSite->GetCoordinate().Y < CurrentIntersectionStar.Y ||
                 (
-                    CurrentSite->Coordinate.Y == CurrentIntersectionStar.Coordinate.Y
-                    && CurrentSite->Coordinate.X < CurrentIntersectionStar.Coordinate.X
+                    CurrentSite->GetCoordinate().Y == CurrentIntersectionStar.Y &&
+                    CurrentSite->GetCoordinate().X <  CurrentIntersectionStar.X
                 )
             )
         )
         {
             // Current processed site is the smallest
-            LeftBound = EdgeList.GetLeftBoundFrom(CurrentSite);
+            LeftBound = EdgeList.GetLeftBoundFrom(CurrentSite->GetCoordinate());
             RightBound = LeftBound->EdgeListRight;
-            Bottom = EdgeList.GetRightRegion(LeftBound);
+            BottomSite = GetRightRegion(LeftBound);
 
-            Edge = FVoronoiDiagramEdge::Bisect(Bottom, CurrentSite);
-            Edge->EdgeIndex = NumGeneratedEdges;
+            Edge = FVoronoiDiagramEdge::Bisect(BottomSite, CurrentSite);
+            Edge->Index = NumGeneratedEdges;
             NumGeneratedEdges++;
+            
+            GeneratedEdges.Add(Edge);
             
             Bisector = FVoronoiDiagramHalfEdge::CreatePtr(Edge, EVoronoiDiagramEdge::Left);
             EdgeList.Insert(LeftBound, Bisector);
             
-            Vertex = FVoronoiDiagramPoint::Intersect(LeftBound, Bisector);
+            Vertex = FVoronoiDiagramVertex::Intersect(LeftBound, Bisector);
             if(Vertex.IsValid())
             {
+//                if(LeftBound->Vertex.IsValid())
+//                {
+//                    UE_LOG(LogVoronoiDiagram, Log, TEXT("Delete LeftBound @ %p"), LeftBound.Get());
+//                }
+//                else
+//                {
+//                    UE_LOG(LogVoronoiDiagram, Log, TEXT("Delete should skip"));
+//                }
                 PriorityQueue.Delete(LeftBound);
-                PriorityQueue.Insert(LeftBound, Vertex, CurrentSite->GetDistanceFrom(Vertex));
+                
+                LeftBound->Vertex = Vertex;
+                LeftBound->YStar = Vertex->GetCoordinate().Y + CurrentSite->GetDistanceFrom(Vertex);
+                
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("Insert LeftBound @ %p"), LeftBound.Get());
+                PriorityQueue.Insert(LeftBound);
             }
             
             LeftBound = Bisector;
@@ -490,10 +553,14 @@ void FVoronoiDiagram::GenerateEdges()
             
             EdgeList.Insert(LeftBound, Bisector);
             
-            Vertex = FVoronoiDiagramPoint::Intersect(Bisector, RightBound);
+            Vertex = FVoronoiDiagramVertex::Intersect(Bisector, RightBound);
             if(Vertex.IsValid())
             {
-                PriorityQueue.Insert(Bisector, Vertex, CurrentSite->GetDistanceFrom(Vertex));
+                Bisector->Vertex = Vertex;
+                Bisector->YStar = Vertex->GetCoordinate().Y + CurrentSite->GetDistanceFrom(Vertex);
+            
+                UE_LOG(LogVoronoiDiagram, Log, TEXT("Insert Bisector @ %p"), Bisector.Get());
+                PriorityQueue.Insert(Bisector);
             }
             
             CurrentSite = GetNextSite();
@@ -501,12 +568,20 @@ void FVoronoiDiagram::GenerateEdges()
         else if(PriorityQueue.IsEmpty() == false)
         {
             // Current intersection is the smallest
-            LeftBound = PriorityQueue.RemoveAndReturnMinimumEdge();
+            LeftBound = PriorityQueue.RemoveAndReturnMinimum();
             LeftLeftBound = LeftBound->EdgeListLeft;
             RightBound = LeftBound->EdgeListRight;
             RightRightBound = RightBound->EdgeListRight;
-            Bottom = EdgeList.GetLeftRegion(LeftBound);
-            Top = EdgeList.GetRightRegion(RightBound);
+            BottomSite = GetLeftRegion(LeftBound);
+            TopSite = GetRightRegion(RightBound);
+            
+            // These three sites define a Delaunay triangle
+            // Bottom, Top, EdgeList.GetRightRegion(RightBound);
+//            UE_LOG(LogVoronoiDiagram, Log, TEXT("Delaunay triagnle: (%f, %f), (%f, %f), (%f, %f)"),
+//                Bottom->Coordinate.X, Bottom->Coordinate.Y,
+//                Top->Coordinate.X, Top->Coordinate.Y,
+//                EdgeList.GetRightRegion(LeftBound)->Coordinate.X,
+//                EdgeList.GetRightRegion(LeftBound)->Coordinate.Y);
             
             v = LeftBound->Vertex;
             v->Index = NumGeneratedVertices;
@@ -516,19 +591,33 @@ void FVoronoiDiagram::GenerateEdges()
             RightBound->Edge->SetEndpoint(v, RightBound->EdgeType);
             
             EdgeList.Delete(LeftBound);
+            
+//            if(RightBound->Vertex.IsValid())
+//            {
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("Delete RightBound @ %p"), RightBound.Get());
+//            }
+//            else
+//            {
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("Delete should skip"));
+//            }
             PriorityQueue.Delete(RightBound);
             EdgeList.Delete(RightBound);
             
             EdgeType = EVoronoiDiagramEdge::Left;
-            if(Bottom->Coordinate.Y > Top->Coordinate.Y)
+            if(BottomSite->GetCoordinate().Y > TopSite->GetCoordinate().Y)
             {
-                TempPoint = Bottom;
-                Bottom = Top;
-                Top = TempPoint;
+                TempSite = BottomSite;
+                BottomSite = TopSite;
+                TopSite = TempSite;
                 EdgeType = EVoronoiDiagramEdge::Right;
             }
             
-            Edge = FVoronoiDiagramEdge::Bisect(Bottom, Top);
+            Edge = FVoronoiDiagramEdge::Bisect(BottomSite, TopSite);
+            Edge->Index = NumGeneratedEdges;
+            NumGeneratedEdges++;
+            
+            GeneratedEdges.Add(Edge);
+            
             Bisector = FVoronoiDiagramHalfEdge::CreatePtr(Edge, EdgeType);
             EdgeList.Insert(LeftLeftBound, Bisector);
             
@@ -536,21 +625,40 @@ void FVoronoiDiagram::GenerateEdges()
             {
                 Edge->SetEndpoint(v, EVoronoiDiagramEdge::Right);
             }
+            else
             {
                 Edge->SetEndpoint(v, EVoronoiDiagramEdge::Left);
             }
             
-            Vertex = FVoronoiDiagramPoint::Intersect(LeftLeftBound, Bisector);
+            Vertex = FVoronoiDiagramVertex::Intersect(LeftLeftBound, Bisector);
             if(Vertex.IsValid())
             {
+//                if(LeftLeftBound->Vertex.IsValid())
+//                {
+//                    UE_LOG(LogVoronoiDiagram, Log, TEXT("Delete LeftLeftBound @ %p"), LeftLeftBound.Get());
+//                }
+//                else
+//                {
+//                    UE_LOG(LogVoronoiDiagram, Log, TEXT("Delete should skip"));
+//                }
                 PriorityQueue.Delete(LeftLeftBound);
-                PriorityQueue.Insert(LeftLeftBound, Vertex, Bottom->GetDistanceFrom(Vertex));
+
+                LeftLeftBound->Vertex = Vertex;
+                LeftLeftBound->YStar = Vertex->GetCoordinate().Y + BottomSite->GetDistanceFrom(Vertex);
+
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("Insert LeftLeftBound @ %p"), LeftLeftBound.Get());
+                PriorityQueue.Insert(LeftLeftBound);
             }
             
-            Vertex = FVoronoiDiagramPoint::Intersect(Bisector, RightRightBound);
+            Vertex = FVoronoiDiagramVertex::Intersect(Bisector, RightRightBound);
             if(Vertex.IsValid())
             {
-                PriorityQueue.Insert(Bisector, Vertex, Bottom->GetDistanceFrom(Vertex));
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("Insert Bisector @ %p"), Bisector.Get());
+                
+                Bisector->Vertex = Vertex;
+                Bisector->YStar = Vertex->GetCoordinate().Y + BottomSite->GetDistanceFrom(Vertex);
+                
+                PriorityQueue.Insert(Bisector);
             }
         }
         else
@@ -558,11 +666,43 @@ void FVoronoiDiagram::GenerateEdges()
             bDone = true;
         }
     }
+    
+    for(auto Itr(GeneratedEdges.CreateConstIterator()); Itr; ++Itr)
+    {
+        TSharedPtr<FVoronoiDiagramEdge> CurrentEdge = (*Itr);
+        
+        FString LeftEndPoint;
+        if(CurrentEdge->LeftEndPoint.IsValid())
+        {
+            LeftEndPoint = FString::Printf(TEXT("%f, %f"), CurrentEdge->LeftEndPoint->GetCoordinate().X, CurrentEdge->LeftEndPoint->GetCoordinate().Y);
+        }
+        else
+        {
+            LeftEndPoint = "nullptr";
+        }
+        
+        FString RightEndPoint;
+        if(CurrentEdge->RightEndPoint.IsValid())
+        {
+            RightEndPoint = FString::Printf(TEXT("%f, %f"), CurrentEdge->RightEndPoint->GetCoordinate().X, CurrentEdge->RightEndPoint->GetCoordinate().Y);
+        }
+        else
+        {
+            RightEndPoint= "nullptr";
+        }
+        
+        UE_LOG(LogVoronoiDiagram, Log, TEXT("Edge #%i; Sites: %i, %i; End Points: (%s), (%s)"),
+            CurrentEdge->Index,
+            CurrentEdge->LeftSite->Index,
+            CurrentEdge->RightSite->Index,
+            *(LeftEndPoint),
+            *(RightEndPoint));
+    }
 }
 
-TSharedPtr<FVoronoiDiagramPoint> FVoronoiDiagram::GetNextSite()
+TSharedPtr<FVoronoiDiagramSite> FVoronoiDiagram::GetNextSite()
 {
-    TSharedPtr<FVoronoiDiagramPoint> NextSite;
+    TSharedPtr<FVoronoiDiagramSite> NextSite;
 
     if (CurrentSiteIndex < Sites.Num())
     {
@@ -573,5 +713,39 @@ TSharedPtr<FVoronoiDiagramPoint> FVoronoiDiagram::GetNextSite()
     else
     {
         return nullptr;
+    }
+}
+
+TSharedPtr<FVoronoiDiagramSite> FVoronoiDiagram::GetLeftRegion(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
+{
+    if(!HalfEdge->Edge.IsValid())
+    {
+        return BottomMostSite;
+    }
+    
+    if(HalfEdge->EdgeType == EVoronoiDiagramEdge::Left)
+    {
+        return HalfEdge->Edge->LeftSite;
+    }
+    else
+    {
+        return HalfEdge->Edge->RightSite;
+    }
+}
+
+TSharedPtr<FVoronoiDiagramSite> FVoronoiDiagram::GetRightRegion(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
+{
+    if(!HalfEdge->Edge.IsValid())
+    {
+        return BottomMostSite;
+    }
+    
+    if(HalfEdge->EdgeType == EVoronoiDiagramEdge::Left)
+    {
+        return HalfEdge->Edge->RightSite;
+    }
+    else
+    {
+        return HalfEdge->Edge->LeftSite;
     }
 }

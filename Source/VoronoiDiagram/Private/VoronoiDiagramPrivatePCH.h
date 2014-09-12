@@ -5,7 +5,8 @@
 #include "Engine.h"
 
 #include "VoronoiDiagram.h"
-#include "VoronoiDiagramPoint.h"
+#include "VoronoiDiagramSite.h"
+#include "VoronoiDiagramVertex.h"
 #include "VoronoiDiagramEdge.h"
 #include "VoronoiDiagramHalfEdge.h"
 

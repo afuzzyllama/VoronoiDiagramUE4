@@ -9,15 +9,17 @@ public:
     void GenerateEdges();
     
 private:
-    TArray<TSharedPtr<class FVoronoiDiagramPoint>> Sites;
+    TArray<TSharedPtr<class FVoronoiDiagramSite>> Sites;
+    TSharedPtr<class FVoronoiDiagramSite> BottomMostSite;
     int32 CurrentSiteIndex;
     TSharedPtr<FVector2D> MinValues;
     TSharedPtr<FVector2D> MaxValues;
     TSharedPtr<FVector2D> DeltaValues;
     FIntRect Bounds;
     
-    TSharedPtr<class FVoronoiDiagramPoint> GetNextSite();
-
+    TSharedPtr<class FVoronoiDiagramSite> GetNextSite();
+    TSharedPtr<class FVoronoiDiagramSite> GetLeftRegion(TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdge);
+    TSharedPtr<class FVoronoiDiagramSite> GetRightRegion(TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdge);
 };
 
 // class FVoronoiDiagramHelper

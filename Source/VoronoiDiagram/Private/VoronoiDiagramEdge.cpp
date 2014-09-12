@@ -3,21 +3,22 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramEdge.h"
 
-TSharedPtr<FVoronoiDiagramEdge> FVoronoiDiagramEdge::Bisect(TSharedPtr<FVoronoiDiagramPoint> SiteA, TSharedPtr<FVoronoiDiagramPoint> SiteB)
+TSharedPtr<FVoronoiDiagramEdge> FVoronoiDiagramEdge::DELETED(new FVoronoiDiagramEdge());
+
+TSharedPtr<FVoronoiDiagramEdge> FVoronoiDiagramEdge::Bisect(TSharedPtr<FVoronoiDiagramSite> SiteA, TSharedPtr<FVoronoiDiagramSite> SiteB)
 {
     float dx, dy;
     TSharedPtr<FVoronoiDiagramEdge> NewEdge(new FVoronoiDiagramEdge());
-    
-    NewEdge->LeftRegion = SiteA;
-    NewEdge->RightRegion = SiteB;
-    
+
+    NewEdge->LeftSite = SiteA;
+    NewEdge->RightSite = SiteB;
     NewEdge->LeftEndPoint = nullptr;
     NewEdge->RightEndPoint = nullptr;
     
-    dx = SiteB->Coordinate.X - SiteA->Coordinate.X;
-    dy = SiteB->Coordinate.Y - SiteA->Coordinate.Y;
+    dx = SiteB->GetCoordinate().X - SiteA->GetCoordinate().X;
+    dy = SiteB->GetCoordinate().Y - SiteA->GetCoordinate().Y;
     
-    NewEdge->c = SiteA->Coordinate.X * dx + SiteA->Coordinate.Y * dy + (dx * dx + dy * dy) * 0.5f;
+    NewEdge->c = SiteA->GetCoordinate().X * dx + SiteA->GetCoordinate().Y * dy + (dx * dx + dy * dy) * 0.5f;
     if(FMath::Abs(dx) > FMath::Abs(dy))
     {
         NewEdge->a = 1.0f;
@@ -30,25 +31,11 @@ TSharedPtr<FVoronoiDiagramEdge> FVoronoiDiagramEdge::Bisect(TSharedPtr<FVoronoiD
         NewEdge->a = dx/dy;
         NewEdge->c /= dy;
     }
-    
+
     return NewEdge;
 }
 
-FVoronoiDiagramEdge::FVoronoiDiagramEdge()
-: bMarkedForDeletion(false)
-{}
-
-bool FVoronoiDiagramEdge::IsDeleted()
-{
-    return bMarkedForDeletion;
-}
-
-void FVoronoiDiagramEdge::MarkForDeletion()
-{
-    bMarkedForDeletion = true;
-}
-
-void FVoronoiDiagramEdge::SetEndpoint(TSharedPtr<class FVoronoiDiagramPoint> Vertex, EVoronoiDiagramEdge::Type EdgeType)
+void FVoronoiDiagramEdge::SetEndpoint(TSharedPtr<FVoronoiDiagramVertex> Vertex, EVoronoiDiagramEdge::Type EdgeType)
 {
     if(EdgeType == EVoronoiDiagramEdge::Left)
     {
@@ -58,14 +45,15 @@ void FVoronoiDiagramEdge::SetEndpoint(TSharedPtr<class FVoronoiDiagramPoint> Ver
     {
         RightEndPoint = Vertex;
     }
-    
-    if(
-        (EdgeType == EVoronoiDiagramEdge::Left && RightEndPoint.IsValid() == false) ||
-        (EdgeType == EVoronoiDiagramEdge::Right && LeftEndPoint.IsValid() == false)
-    )
-    {
-        return;
-    }
-
-    UE_LOG(LogVoronoiDiagram, Log, TEXT("Edge %i: %i@(%f, %f) -> %i@(%f, %f)"), EdgeIndex, LeftEndPoint->Index, LeftEndPoint->Coordinate.X, LeftEndPoint->Coordinate.Y, RightEndPoint->Coordinate.X, RightEndPoint->Coordinate.Y);
 }
+
+FVoronoiDiagramEdge::FVoronoiDiagramEdge()
+: Index(-1)
+, a(0.0f)
+, b(0.0f)
+, c(0.0f)
+, LeftEndPoint(nullptr)
+, RightEndPoint(nullptr)
+, LeftSite(nullptr)
+, RightSite(nullptr)
+{}

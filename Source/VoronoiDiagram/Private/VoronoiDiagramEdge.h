@@ -14,27 +14,22 @@ namespace EVoronoiDiagramEdge
 class FVoronoiDiagramEdge
 {
 public:
-    static TSharedPtr<FVoronoiDiagramEdge> Bisect(TSharedPtr<class FVoronoiDiagramPoint> SiteA, TSharedPtr<class FVoronoiDiagramPoint> SiteB);
+    static TSharedPtr<FVoronoiDiagramEdge> DELETED;
+    static TSharedPtr<FVoronoiDiagramEdge> Bisect(TSharedPtr<class FVoronoiDiagramSite> SiteA, TSharedPtr<class FVoronoiDiagramSite> SiteB);
 
-    FVoronoiDiagramEdge();
+    int32 Index;
     
-    bool IsDeleted();
-    void MarkForDeletion();
-    
-    void SetEndpoint(TSharedPtr<class FVoronoiDiagramPoint> Vertex, EVoronoiDiagramEdge::Type EdgeType);
-
-    int32 EdgeIndex;
-
     // The equation of the edge: ax + by = c
     float a, b, c;
     
-    TSharedPtr<class FVoronoiDiagramPoint> LeftEndPoint;
-    TSharedPtr<class FVoronoiDiagramPoint> RightEndPoint;
+    TSharedPtr<class FVoronoiDiagramVertex> LeftEndPoint;
+    TSharedPtr<class FVoronoiDiagramVertex> RightEndPoint;
     
-    TSharedPtr<class FVoronoiDiagramPoint> LeftRegion;
-    TSharedPtr<class FVoronoiDiagramPoint> RightRegion;
-    
-    bool bMarkedForDeletion;
-    
+    TSharedPtr<class FVoronoiDiagramSite> LeftSite;
+    TSharedPtr<class FVoronoiDiagramSite> RightSite;
 
+    void SetEndpoint(TSharedPtr<class FVoronoiDiagramVertex> Vertex, EVoronoiDiagramEdge::Type EdgeType);
+
+private:
+    FVoronoiDiagramEdge();
 };

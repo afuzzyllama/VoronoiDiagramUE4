@@ -9,14 +9,14 @@ TSharedPtr<FVoronoiDiagramHalfEdge> FVoronoiDiagramHalfEdge::CreatePtr(TSharedPt
     return TSharedPtr<FVoronoiDiagramHalfEdge>(new FVoronoiDiagramHalfEdge(Edge, EdgeType));
 }
 
-bool FVoronoiDiagramHalfEdge::IsLeftOf(TSharedPtr<FVoronoiDiagramPoint> Point)
+bool FVoronoiDiagramHalfEdge::IsLeftOf(FVector2D Point)
 {
-    TSharedPtr<FVoronoiDiagramPoint> TopSite;
+    TSharedPtr<FVoronoiDiagramSite> TopSite;
     bool bAbove, bFast, bRightOfSite;
     float dxp, dyp, dxs;
     
-    TopSite = Edge->RightRegion;
-    bRightOfSite = Point->Coordinate.X > TopSite->Coordinate.X;
+    TopSite = Edge->RightSite;
+    bRightOfSite = Point.X > TopSite->GetCoordinate().X;
 
     if( bRightOfSite && EdgeType == EVoronoiDiagramEdge::Left)
     {
@@ -30,8 +30,8 @@ bool FVoronoiDiagramHalfEdge::IsLeftOf(TSharedPtr<FVoronoiDiagramPoint> Point)
     
     if (Edge->a == 1.0f)
     {
-        dyp = Point->Coordinate.Y - TopSite->Coordinate.Y;
-        dxp = Point->Coordinate.X - TopSite->Coordinate.X;
+        dyp = Point.Y - TopSite->GetCoordinate().Y;
+        dxp = Point.X - TopSite->GetCoordinate().X;
 
         bFast = false;
         if((!bRightOfSite && Edge->b < 0.0f) ||
@@ -42,7 +42,7 @@ bool FVoronoiDiagramHalfEdge::IsLeftOf(TSharedPtr<FVoronoiDiagramPoint> Point)
         }
         else 
         {
-            bAbove = Point->Coordinate.X + Point->Coordinate.Y * Edge->b > Edge->c;
+            bAbove = Point.X + Point.Y * Edge->b > Edge->c;
             if(Edge->b < 0.0f)
             {
                 bAbove = !bAbove;
@@ -55,7 +55,7 @@ bool FVoronoiDiagramHalfEdge::IsLeftOf(TSharedPtr<FVoronoiDiagramPoint> Point)
         
         if(!bFast)
         {
-            dxs = TopSite->Coordinate.X - Edge->LeftRegion->Coordinate.X;
+            dxs = TopSite->GetCoordinate().X - Edge->LeftSite->GetCoordinate().X;
             bAbove = Edge->b * (dxp * dxp - dyp * dyp) < dxs * dyp * (1.0f + 2.0f * dxp / dxs + Edge->b * Edge->b);
             if (Edge->b < 0.0f)
             {
@@ -66,18 +66,23 @@ bool FVoronoiDiagramHalfEdge::IsLeftOf(TSharedPtr<FVoronoiDiagramPoint> Point)
     else // edge.b == 1.0
     {
         float t1, t2, t3, yl;
-        yl = Edge->c - Edge->a * Point->Coordinate.X;
-        t1 = Point->Coordinate.Y - yl;
-        t2 = Point->Coordinate.X - TopSite->Coordinate.X;
-        t3 = yl - TopSite->Coordinate.Y;
+        yl = Edge->c - Edge->a * Point.X;
+        t1 = Point.Y - yl;
+        t2 = Point.X - TopSite->GetCoordinate().X;
+        t3 = yl - TopSite->GetCoordinate().Y;
         bAbove = t1 * t1 > t2 * t2 + t3 * t3;
     }
     return EdgeType == EVoronoiDiagramEdge::Left ? bAbove : !bAbove;
 }
 
-bool FVoronoiDiagramHalfEdge::IsRightOf(TSharedPtr<FVoronoiDiagramPoint> Point)
+bool FVoronoiDiagramHalfEdge::IsRightOf(FVector2D Point)
 {
     return !IsLeftOf(Point);
+}
+
+bool FVoronoiDiagramHalfEdge::HasReferences()
+{
+    return EdgeListLeft.IsValid() || EdgeListRight.IsValid() || NextInPriorityQueue.IsValid();
 }
 
 // Never want to create a half edge directly since we are dealing with pointers

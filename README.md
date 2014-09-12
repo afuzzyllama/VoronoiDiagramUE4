@@ -19,10 +19,11 @@ The following code:
     FVoronoiDiagramHelper::GenerateTexture(VoronoiDiagram, MyTexture);
     
 Will create a texture similar to:
+
 ![Voronoi Diagram](../../../Screenshots/blob/master/VoronoiDiagram.png?raw=true "Voronoi Diagram")
 
 Citations:
-==========
+----------
 Fortune's Algorithm as outlined in:
 Steve J. Fortune (1987). "A Sweepline Algorithm for Voronoi Diagrams". Algorithmica 2, 153-174. 
 

@@ -24,11 +24,16 @@ public:
     
     TSharedPtr<class FVoronoiDiagramVertex> LeftEndPoint;
     TSharedPtr<class FVoronoiDiagramVertex> RightEndPoint;
+
+    FVector2D LeftClippedEndPoint;
+    FVector2D RightClippedEndPoint;
     
     TSharedPtr<class FVoronoiDiagramSite> LeftSite;
     TSharedPtr<class FVoronoiDiagramSite> RightSite;
 
     void SetEndpoint(TSharedPtr<class FVoronoiDiagramVertex> Vertex, EVoronoiDiagramEdge::Type EdgeType);
+    
+    void GenerateClippedEndPoints(FIntRect Bounds);
 
 private:
     FVoronoiDiagramEdge();

@@ -3,6 +3,8 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramModule.h"
 #include "VoronoiDiagram.h"
+#include "VoronoiDiagramGeneratedSite.h"
+#include "VoronoiDiagramGeneratedEdge.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // FVoronoiDiagramEdgeList
@@ -473,7 +475,7 @@ bool FVoronoiDiagram::AddPoints(TArray<FIntPoint>& Points)
     return true;
 }
 
-void FVoronoiDiagram::GenerateEdges()
+void FVoronoiDiagram::GenerateEdges(TArray<FVoronoiDiagramGeneratedEdge>& OutEdges)
 {
     // Fortune's Algorithm
     int32 NumGeneratedEdges = 0;
@@ -559,7 +561,7 @@ void FVoronoiDiagram::GenerateEdges()
                 Bisector->Vertex = Vertex;
                 Bisector->YStar = Vertex->GetCoordinate().Y + CurrentSite->GetDistanceFrom(Vertex);
             
-                UE_LOG(LogVoronoiDiagram, Log, TEXT("Insert Bisector @ %p"), Bisector.Get());
+//                UE_LOG(LogVoronoiDiagram, Log, TEXT("Insert Bisector @ %p"), Bisector.Get());
                 PriorityQueue.Insert(Bisector);
             }
             
@@ -667,36 +669,46 @@ void FVoronoiDiagram::GenerateEdges()
         }
     }
     
+    OutEdges.Empty();
     for(auto Itr(GeneratedEdges.CreateConstIterator()); Itr; ++Itr)
     {
         TSharedPtr<FVoronoiDiagramEdge> CurrentEdge = (*Itr);
+
+        CurrentEdge->GenerateClippedEndPoints(Bounds);
+
+        FVoronoiDiagramGeneratedSite LeftSite(CurrentEdge->LeftSite->Index, CurrentEdge->LeftSite->GetCoordinate());
+        FVoronoiDiagramGeneratedSite RightSite(CurrentEdge->RightSite->Index, CurrentEdge->RightSite->GetCoordinate());
+        FVoronoiDiagramGeneratedEdge GeneratedEdge(CurrentEdge->Index, CurrentEdge->LeftClippedEndPoint, CurrentEdge->RightClippedEndPoint, LeftSite, RightSite);
         
-        FString LeftEndPoint;
-        if(CurrentEdge->LeftEndPoint.IsValid())
-        {
-            LeftEndPoint = FString::Printf(TEXT("%f, %f"), CurrentEdge->LeftEndPoint->GetCoordinate().X, CurrentEdge->LeftEndPoint->GetCoordinate().Y);
-        }
-        else
-        {
-            LeftEndPoint = "nullptr";
-        }
+        OutEdges.Add(GeneratedEdge);
         
-        FString RightEndPoint;
-        if(CurrentEdge->RightEndPoint.IsValid())
-        {
-            RightEndPoint = FString::Printf(TEXT("%f, %f"), CurrentEdge->RightEndPoint->GetCoordinate().X, CurrentEdge->RightEndPoint->GetCoordinate().Y);
-        }
-        else
-        {
-            RightEndPoint= "nullptr";
-        }
-        
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("Edge #%i; Sites: %i, %i; End Points: (%s), (%s)"),
-            CurrentEdge->Index,
-            CurrentEdge->LeftSite->Index,
-            CurrentEdge->RightSite->Index,
-            *(LeftEndPoint),
-            *(RightEndPoint));
+//        
+//        FString LeftEndPoint;
+//        if(CurrentEdge->LeftEndPoint.IsValid())
+//        {
+//            LeftEndPoint = FString::Printf(TEXT("%f, %f"), CurrentEdge->LeftEndPoint->GetCoordinate().X, CurrentEdge->LeftEndPoint->GetCoordinate().Y);
+//        }
+//        else
+//        {
+//            LeftEndPoint = "nullptr";
+//        }
+//        
+//        FString RightEndPoint;
+//        if(CurrentEdge->RightEndPoint.IsValid())
+//        {
+//            RightEndPoint = FString::Printf(TEXT("%f, %f"), CurrentEdge->RightEndPoint->GetCoordinate().X, CurrentEdge->RightEndPoint->GetCoordinate().Y);
+//        }
+//        else
+//        {
+//            RightEndPoint= "nullptr";
+//        }
+//        
+//        UE_LOG(LogVoronoiDiagram, Log, TEXT("Edge #%i; Sites: %i, %i; End Points: (%s), (%s)"),
+//            CurrentEdge->Index,
+//            CurrentEdge->LeftSite->Index,
+//            CurrentEdge->RightSite->Index,
+//            *(LeftEndPoint),
+//            *(RightEndPoint));
     }
 }
 
@@ -749,3 +761,144 @@ TSharedPtr<FVoronoiDiagramSite> FVoronoiDiagram::GetRightRegion(TSharedPtr<FVoro
         return HalfEdge->Edge->LeftSite;
     }
 }
+
+void FVoronoiDiagramHelper::GenerateTexture(FVoronoiDiagram VoronoiDiagram, UTexture2D*& GeneratedTexture)
+{
+    GeneratedTexture = UTexture2D::CreateTransient(VoronoiDiagram.Bounds.Width(), VoronoiDiagram.Bounds.Height());
+
+    FColor* MipData = static_cast<FColor*>(GeneratedTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
+
+    for(int32 x = 0; x < VoronoiDiagram.Bounds.Width(); ++x)
+    {
+        for(int32 y = 0; y < VoronoiDiagram.Bounds.Height(); ++y)
+        {
+            MipData[x + y * VoronoiDiagram.Bounds.Width()] = FColor::White;
+        }
+    }
+    
+    TArray<FVoronoiDiagramGeneratedEdge> GeneratedEdges;
+    VoronoiDiagram.GenerateEdges(GeneratedEdges);
+    
+    for(auto Itr(GeneratedEdges.CreateConstIterator()); Itr; ++Itr)
+    {
+        FVoronoiDiagramGeneratedEdge CurrentEdge = *Itr;
+        
+        // Draw sites
+        DrawOnMipData(MipData, FColor::Red, CurrentEdge.LeftSite.Coordinate.X, CurrentEdge.LeftSite.Coordinate.Y, VoronoiDiagram.Bounds);
+        DrawOnMipData(MipData, FColor::Red, CurrentEdge.RightSite.Coordinate.X, CurrentEdge.RightSite.Coordinate.Y, VoronoiDiagram.Bounds);
+    
+        // Draw vertices
+        DrawOnMipData(MipData, FColor::Blue, CurrentEdge.LeftEndPoint.X, CurrentEdge.LeftEndPoint.Y, VoronoiDiagram.Bounds);
+        DrawOnMipData(MipData, FColor::Blue, CurrentEdge.RightEndPoint.X, CurrentEdge.RightEndPoint.Y, VoronoiDiagram.Bounds);
+        
+        // Bresenham's line algorithm
+        FVector2D PointA = CurrentEdge.LeftEndPoint;
+        FVector2D PointB = CurrentEdge.RightEndPoint;
+        
+        bool Steep = FMath::Abs(PointB.Y - PointA.Y) > FMath::Abs(PointB.X - PointA.X);
+
+        if(Steep)
+        {
+            PointA = FVector2D(PointA.Y, PointA.X);
+            PointB = FVector2D(PointB.Y, PointB.X);
+        }
+     
+        if(PointA.X > PointB.X)
+        {
+            float temp;
+            
+            temp = PointA.X;
+            PointA.X = PointB.X;
+            PointB.X = temp;
+            
+            temp = PointA.Y;
+            PointA.Y = PointB.Y;
+            PointB.Y = temp;
+        }
+        
+        FIntPoint Delta(PointB.X - PointA.X, FMath::Abs(PointB.Y - PointA.Y));
+        int32 Error = Delta.X / 2;
+        int32 YStep;
+        if(PointA.Y < PointB.Y)
+        {
+            YStep = 1;
+        }
+        else
+        {
+            YStep = -1;
+        }
+        
+        int32 y = PointA.Y;
+        for(int32 x = PointA.X; x <= PointB.X; ++x)
+        {
+            if(Steep)
+            {
+                if(VoronoiDiagram.Bounds.Contains(FIntPoint(y, x)))
+                {
+                    DrawOnMipData(MipData, FColor::Black, y, x, VoronoiDiagram.Bounds);
+                }
+            }
+            else
+            {
+                if(VoronoiDiagram.Bounds.Contains(FIntPoint(y, x)))
+                {
+                    DrawOnMipData(MipData, FColor::Black, x, y, VoronoiDiagram.Bounds);
+                }
+            }
+
+            Error -= Delta.Y;
+            if(Error < 0)
+            {
+                y += YStep;
+                Error += Delta.X;
+            }
+        }
+    }
+    
+    // Unlock the texture
+    GeneratedTexture->PlatformData->Mips[0].BulkData.Unlock();
+    GeneratedTexture->UpdateResource();
+}
+
+void FVoronoiDiagramHelper::DrawOnMipData(FColor* MipData, FColor Color, int32 X, int32 Y, FIntRect Bounds)
+{
+    if(Bounds.Contains(FIntPoint(X, Y)))
+    {
+        int32 Index = X + Y * Bounds.Width();
+        MipData[Index] = Color;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

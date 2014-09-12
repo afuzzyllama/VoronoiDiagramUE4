@@ -19,7 +19,7 @@ The following code:
     FVoronoiDiagramHelper::GenerateTexture(VoronoiDiagram, MyTexture);
     
 Will create a texture similar to:
-![Voronoi Diagram](../../Screenshots/VoronoiDiagram.png?raw=true "Voronoi Diagram")
+![Voronoi Diagram](../../../Screenshots/VoronoiDiagram.png?raw=true "Voronoi Diagram")
 
 Citations:
 ==========

@@ -3,7 +3,6 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramHalfEdge.h"
 
-
 TSharedPtr<FVoronoiDiagramHalfEdge> FVoronoiDiagramHalfEdge::CreatePtr(TSharedPtr<FVoronoiDiagramEdge> Edge, EVoronoiDiagramEdge::Type EdgeType)
 {
     return TSharedPtr<FVoronoiDiagramHalfEdge>(new FVoronoiDiagramHalfEdge(Edge, EdgeType));

@@ -3,12 +3,6 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramVertex.h"
 
-
-FVector2D FVoronoiDiagramVertex::GetCoordinate() const
-{
-    return Coordinate;
-}
-
 TSharedPtr<FVoronoiDiagramVertex> FVoronoiDiagramVertex::CreatePtr(int32 Index, FVector2D Coordinate)
 {
     return TSharedPtr<FVoronoiDiagramVertex>(new FVoronoiDiagramVertex(Index, Coordinate));
@@ -23,11 +17,12 @@ TSharedPtr<FVoronoiDiagramVertex> FVoronoiDiagramVertex::Intersect(TSharedPtr<FV
     
     EdgeA = HalfEdgeA->Edge;
     EdgeB = HalfEdgeB->Edge;
+    
     if(!EdgeA.IsValid() || !EdgeB.IsValid())
     {
         return nullptr;
     }
-        
+    
     if(EdgeA->RightSite.Get() == EdgeB->RightSite.Get())
     {
         return nullptr;
@@ -63,7 +58,6 @@ TSharedPtr<FVoronoiDiagramVertex> FVoronoiDiagramVertex::Intersect(TSharedPtr<FV
     }
     
     bRightOfSite = IntersectionX >= Edge->RightSite->GetCoordinate().X;
-
     if(
         ( bRightOfSite && HalfEdge->EdgeType == EVoronoiDiagramEdge::Left) ||
         (!bRightOfSite && HalfEdge->EdgeType == EVoronoiDiagramEdge::Right)
@@ -81,6 +75,12 @@ FVoronoiDiagramVertex::FVoronoiDiagramVertex(int32 InIndex, FVector2D InCoordina
 {
     if(Coordinate.X == NAN || Coordinate.Y == NAN)
     {
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("Contains NaN"));
+        // This probably should not happen, but it will alert in the logs if it does
+        UE_LOG(LogVoronoiDiagram, Error, TEXT("Contains NaN"));
     }
+}
+
+FVector2D FVoronoiDiagramVertex::GetCoordinate() const
+{
+    return Coordinate;
 }

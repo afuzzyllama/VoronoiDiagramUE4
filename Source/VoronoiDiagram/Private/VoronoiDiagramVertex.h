@@ -3,19 +3,38 @@
 
 #include "IVoronoiDiagramPoint.h"
 
+/*
+ *  Represents a vertex in the Voronoi Diagram.  Must be instantiated as a pointer.
+ */
 class FVoronoiDiagramVertex : public IVoronoiDiagramPoint
 {
 public:
+    /*
+     *  Creates a pointer to a new vertex
+     *
+     *  @param  Index       Index of the new vertex
+     *  @param  Coordinate  Coordinate of the new vertex
+     *  @return             Pointer to the new vertex
+     */
     static TSharedPtr<FVoronoiDiagramVertex> CreatePtr(int32 Index, FVector2D Coordinate);
-    static TSharedPtr<FVoronoiDiagramVertex> Intersect(TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdgeA, TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdgeB);
     
     int32 Index;
-    
-    virtual FVector2D GetCoordinate() const override;
-
-    
-private:
     FVector2D Coordinate;
+    
+    /*
+     *  Creates a vertex at the intersection of two edges.
+     *
+     *  @param  HalfEdgeA   The first edge
+     *  @param  HalfEdgeB   The second edge
+     *  @return             Pointer to the new vertex. nullptr the two edges do not intersect 
+     */
+    static TSharedPtr<FVoronoiDiagramVertex> Intersect(TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdgeA, TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdgeB);
 
+    // Begin IVoronoiDiagramPoint
+    virtual FVector2D GetCoordinate() const override;
+    // End of IVoronoiDiagramPoint
+
+
+private:
     FVoronoiDiagramVertex(int32 InIndex, FVector2D InCoordinate);
 };

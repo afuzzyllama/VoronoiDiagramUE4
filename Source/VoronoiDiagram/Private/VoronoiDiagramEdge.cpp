@@ -37,6 +37,8 @@ TSharedPtr<FVoronoiDiagramEdge> FVoronoiDiagramEdge::Bisect(TSharedPtr<FVoronoiD
 
 void FVoronoiDiagramEdge::SetEndpoint(TSharedPtr<FVoronoiDiagramVertex> Vertex, EVoronoiDiagramEdge::Type EdgeType)
 {
+    check(EdgeType != EVoronoiDiagramEdge::None);
+    
     if(EdgeType == EVoronoiDiagramEdge::Left)
     {
         LeftEndPoint = Vertex;

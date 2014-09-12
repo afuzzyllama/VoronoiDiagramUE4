@@ -1,6 +1,9 @@
 // Copyright 2014 afuzzyllama. All Rights Reserved.
 #pragma once
 
+/*
+ *  Interface for any class that needs to be a point in a Voronoi Diagram
+ */
 class IVoronoiDiagramPoint
 {
 public:

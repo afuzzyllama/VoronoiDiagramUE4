@@ -10,15 +10,15 @@ namespace UnrealBuildTool.Rules
 				new string[] {
 					"VoronoiDiagram/Private"
 				}
-            );
+            		);
 
-            PrivateDependencyModuleNames.AddRange(
-                new string[] {
-                    "Core",
-                    "CoreUObject",
-                    "Engine"
-                }
-            );
-        }
+            		PrivateDependencyModuleNames.AddRange(
+                		new string[] {
+                    			"Core",
+                    			"CoreUObject",
+                    			"Engine"
+                		}
+            		);
+        	}
 	}
 }

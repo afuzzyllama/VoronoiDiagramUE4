@@ -3,7 +3,11 @@ VoronoiDiagram
 
 This repository contains code that can generate a [Voronoi Diagram](http://en.wikipedia.org/wiki/Voronoi_diagram) by using an implementation of [Fortune's Algorithm](http://en.wikipedia.org/wiki/Fortune's_algorithm) for the Unreal Engine.  
 
+To use, clone the code into a directory named 'VoronoiDiagram' in your Unreal project's plugin directory.  Don't forget to add a public dependency to your project for the plugin, or else your Unreal project will not be able to find it.
+
 The following code:
+
+    #include"VoronoiDiagram.h"
 
     UTexture2D* MyTexture;
     

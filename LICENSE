@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) 2014 
+Copyright (c) afuzzyllama 2014 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Unreal® is a trademark or registered trademark of Epic Games, Inc. in the United States of America and elsewhere
+Unreal® Engine, Copyright 1998 – 2014, Epic Games, Inc. All rights reserved.
+
+Fortune's Algorithm as outlined in:
+Steve J. Fortune (1987). "A Sweepline Algorithm for Voronoi Diagrams". Algorithmica 2, 153-174. 
+
+Bresenham's line algorithm as outlined in:
+Bresenham, J. E. (1 January 1965). "Algorithm for computer control of a digital plotter". IBM Systems Journal 4 (1): 25–30

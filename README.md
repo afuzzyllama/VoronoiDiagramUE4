@@ -30,4 +30,8 @@ Steve J. Fortune (1987). "A Sweepline Algorithm for Voronoi Diagrams". Algorithm
 Bresenham's line algorithm as outlined in:
 Bresenham, J. E. (1 January 1965). "Algorithm for computer control of a digital plotter". IBM Systems Journal 4 (1): 25–30
 
+Based off of:
+---------
+[as3delaunay](http://nodename.github.io/as3delaunay/)
+
 

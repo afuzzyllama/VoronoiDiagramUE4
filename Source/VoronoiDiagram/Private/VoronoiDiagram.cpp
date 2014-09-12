@@ -778,7 +778,8 @@ void FVoronoiDiagramHelper::GenerateTexture(FVoronoiDiagram VoronoiDiagram, UTex
     
     TArray<FVoronoiDiagramGeneratedEdge> GeneratedEdges;
     VoronoiDiagram.GenerateEdges(GeneratedEdges);
-    
+
+
     for(auto Itr(GeneratedEdges.CreateConstIterator()); Itr; ++Itr)
     {
         FVoronoiDiagramGeneratedEdge CurrentEdge = *Itr;
@@ -792,8 +793,8 @@ void FVoronoiDiagramHelper::GenerateTexture(FVoronoiDiagram VoronoiDiagram, UTex
         DrawOnMipData(MipData, FColor::Blue, CurrentEdge.RightEndPoint.X, CurrentEdge.RightEndPoint.Y, VoronoiDiagram.Bounds);
         
         // Bresenham's line algorithm
-        FVector2D PointA = CurrentEdge.LeftEndPoint;
-        FVector2D PointB = CurrentEdge.RightEndPoint;
+        FVector2D PointA(CurrentEdge.LeftEndPoint);
+        FVector2D PointB(CurrentEdge.RightEndPoint);
         
         bool Steep = FMath::Abs(PointB.Y - PointA.Y) > FMath::Abs(PointB.X - PointA.X);
 

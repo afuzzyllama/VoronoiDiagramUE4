@@ -69,54 +69,51 @@ void FVoronoiDiagramEdge::GenerateClippedEndPoints(FIntRect Bounds)
     if (a == 1.0f)
     {
         PointA.Y = MinimumValues.Y;
-        
-        if (VertexA.IsValid() && VertexA->GetCoordinate().Y > MinimumValues.Y)
+        if(VertexA.IsValid() && VertexA->GetCoordinate().Y > MinimumValues.Y)
         {
              PointA.Y = VertexA->GetCoordinate().Y;
         }
-        
-        if (PointA.Y > MaximumValues.Y)
+        if(PointA.Y > MaximumValues.Y)
         {
             return;
         }
-        
         PointA.X = c - b * PointA.Y;
         
         PointB.Y = MaximumValues.Y;
-        if (VertexB.IsValid() && VertexB->GetCoordinate().Y < MaximumValues.Y)
+        if(VertexB.IsValid() && VertexB->GetCoordinate().Y < MaximumValues.Y)
         {
             PointB.Y = VertexB->GetCoordinate().Y;
         }
-        
-        if (PointB.Y < MinimumValues.Y)
+        if(PointB.Y < MinimumValues.Y)
         {
             return;
         }
-        
         PointB.X = c - b * PointB.Y;
         
-        if ((PointA.X > MaximumValues.X && PointB.X > MaximumValues.X) || (PointA.X < MinimumValues.X && PointB.X < MinimumValues.X))
+        if(
+            (PointA.X > MaximumValues.X && PointB.X > MaximumValues.X) ||
+            (PointA.X < MinimumValues.X && PointB.X < MinimumValues.X))
         {
             return;
         }
         
-        if (PointA.X > MaximumValues.X)
+        if(PointA.X > MaximumValues.X)
         {
             PointA.X = MaximumValues.X;
             PointA.Y = (c - PointA.X) / b;
         }
-        else if (PointA.X < MinimumValues.X)
+        else if(PointA.X < MinimumValues.X)
         {
             PointA.X = MinimumValues.X;
             PointA.Y = (c - PointA.X) / b;
         }
         
-        if (PointB.X > MaximumValues.X)
+        if(PointB.X > MaximumValues.X)
         {
             PointB.X = MaximumValues.X;
             PointB.Y = (c - PointB.X) / b;
         }
-        else if (PointB.X < MinimumValues.X)
+        else if(PointB.X < MinimumValues.X)
         {
             PointB.X = MinimumValues.X;
             PointB.Y = (c - PointB.X) / b;
@@ -125,55 +122,51 @@ void FVoronoiDiagramEdge::GenerateClippedEndPoints(FIntRect Bounds)
     else
     {
         PointA.X = MinimumValues.X;
-        
-        if (VertexA.IsValid() && VertexA->GetCoordinate().Y > MinimumValues.X)
+        if(VertexA.IsValid() && VertexA->GetCoordinate().X > MinimumValues.X)
         {
-            PointA.X = VertexA->GetCoordinate().Y;
+            PointA.X = VertexA->GetCoordinate().X;
         }
-        
-        if (PointA.X > MaximumValues.X)
+        if(PointA.X > MaximumValues.X)
         {
             return;
         }
-        
         PointA.Y = c - a * PointA.X;
         
         PointB.X = MaximumValues.X;
-        
-        if (VertexB.IsValid() && VertexB->GetCoordinate().Y < MaximumValues.X)
+        if(VertexB.IsValid() && VertexB->GetCoordinate().X < MaximumValues.X)
         {
-            PointB.X = VertexB->GetCoordinate().Y;
+            PointB.X = VertexB->GetCoordinate().X;
         }
-        
-        if (PointB.X < MinimumValues.X)
+        if(PointB.X < MinimumValues.X)
         {
             return;
         }
-        
         PointB.Y = c - a * PointB.X;
         
-        if ((PointA.Y > MaximumValues.Y && PointB.Y > MaximumValues.Y) || (PointA.Y < MinimumValues.Y && PointB.Y < MinimumValues.Y))
+        if(
+            (PointA.Y > MaximumValues.Y && PointB.Y > MaximumValues.Y) ||
+            (PointA.Y < MinimumValues.Y && PointB.Y < MinimumValues.Y))
         {
             return;
         }
         
-        if (PointA.Y > MaximumValues.Y)
+        if(PointA.Y > MaximumValues.Y)
         {
             PointA.Y = MaximumValues.Y;
             PointA.X = (c - PointA.Y)/a;
         }
-        else if (PointA.Y < MinimumValues.Y)
+        else if(PointA.Y < MinimumValues.Y)
         {
             PointA.Y = MinimumValues.Y;
             PointA.X = (c - PointA.Y)/a;
         }
         
-        if (PointB.Y > MaximumValues.Y)
+        if(PointB.Y > MaximumValues.Y)
         {
             PointB.Y = MaximumValues.Y;
             PointB.X = (c - PointB.Y)/a;
         }
-        else if (PointB.Y < MinimumValues.Y)
+        else if(PointB.Y < MinimumValues.Y)
         {
             PointB.Y = MinimumValues.Y;
             PointB.X = (c - PointB.Y)/a;

@@ -20,6 +20,8 @@ public:
 
     int32 Index;
     FVector2D Coordinate;
+    FVector2D Centroid;
+    TArray<TSharedPtr<class FVoronoiDiagramEdge>> Edges;
 
     /*
      *  Gets the distance between the site and the passed in Voronoi Diagram point
@@ -28,6 +30,8 @@ public:
      *  @return         Distance between this site and the pointer
      */
     float GetDistanceFrom(TSharedPtr<IVoronoiDiagramPoint> Point);
+    
+    void GenerateCentroid(FIntRect Bounds);
     
     // Begin IVoronoiDiagramPoint
     virtual FVector2D GetCoordinate() const override;

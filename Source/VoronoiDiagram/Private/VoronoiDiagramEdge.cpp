@@ -31,6 +31,9 @@ TSharedPtr<FVoronoiDiagramEdge> FVoronoiDiagramEdge::Bisect(TSharedPtr<FVoronoiD
         NewEdge->a = dx/dy;
         NewEdge->c /= dy;
     }
+    
+    SiteA->Edges.Add(NewEdge);
+    SiteB->Edges.Add(NewEdge);
 
     return NewEdge;
 }
@@ -177,11 +180,77 @@ void FVoronoiDiagramEdge::GenerateClippedEndPoints(FIntRect Bounds)
 
     if (VertexA == LeftEndPoint)
     {
+        // If the point is equal to zero, find out if it really should be equal to upper limit of the bound
+        if(PointA.X == 0.0f)
+        {
+            if(VertexA.IsValid() && VertexA->GetCoordinate().X >= MaximumValues.X)
+            {
+                PointA.X = MaximumValues.X;
+            }
+        }
+        
+        if(PointB.X == 0.0f)
+        {
+            if(VertexB.IsValid() && VertexB->GetCoordinate().X >= MaximumValues.X)
+            {
+                PointB.X = MaximumValues.X;
+            }
+        }
+    
+        if(PointA.Y == 0.0f)
+        {
+            if(VertexA.IsValid() && VertexA->GetCoordinate().Y >= MaximumValues.Y)
+            {
+                PointA.Y = MaximumValues.Y;
+            }
+        }
+        
+        if(PointB.Y == 0.0f)
+        {
+            if(VertexB.IsValid() && VertexB->GetCoordinate().Y >= MaximumValues.Y)
+            {
+                PointB.Y = MaximumValues.Y;
+            }
+        }
+    
         LeftClippedEndPoint = FVector2D(PointA.X, PointA.Y);
         RightClippedEndPoint = FVector2D(PointB.X, PointB.Y);
     }
     else
     {
+        // If the point is equal to zero, find out if it really should be equal to upper limit of the bound
+        if(PointA.X == 0.0f)
+        {
+            if(VertexB.IsValid() && VertexB->GetCoordinate().X >= MaximumValues.X)
+            {
+                PointA.X = MaximumValues.X;
+            }
+        }
+        
+        if(PointB.X == 0.0f)
+        {
+            if(VertexA.IsValid() && VertexA->GetCoordinate().X >= MaximumValues.X)
+            {
+                PointB.X = MaximumValues.X;
+            }
+        }
+    
+        if(PointA.Y == 0.0f)
+        {
+            if(VertexB.IsValid() && VertexB->GetCoordinate().Y >= MaximumValues.Y)
+            {
+                PointA.Y = MaximumValues.Y;
+            }
+        }
+        
+        if(PointB.Y == 0.0f)
+        {
+            if(VertexA.IsValid() && VertexA->GetCoordinate().Y >= MaximumValues.Y)
+            {
+                PointB.Y = MaximumValues.Y;
+            }
+        }
+    
         RightClippedEndPoint = FVector2D(PointA.X, PointA.Y);
         LeftClippedEndPoint = FVector2D(PointB.X, PointB.Y);
     }

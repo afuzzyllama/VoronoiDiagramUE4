@@ -2,40 +2,40 @@
 #pragma once
 
 /*
- *  Stores final information about a site that is returned in GenerateEdges
- */
-struct FVoronoiDiagramGeneratedSite
-{
-public:
-    FVoronoiDiagramGeneratedSite(int32 InIndex, FVector2D InCoordinate)
-    : Index(InIndex)
-    , Coordinate(InCoordinate)
-    {}
-    
-    const int32 Index;
-    const FVector2D Coordinate;
-};
-
-/*
  *  Stores final information about an edge that is returned in GenerateEdges
  */
 struct FVoronoiDiagramGeneratedEdge
 {
 public:
-    FVoronoiDiagramGeneratedEdge(int32 InIndex, FVector2D InLeftEndPoint, FVector2D InRightEndPoint, FVoronoiDiagramGeneratedSite InLeftSite, FVoronoiDiagramGeneratedSite InRightSite)
+    FVoronoiDiagramGeneratedEdge(int32 InIndex, FVector2D InLeftEndPoint, FVector2D InRightEndPoint)
     : Index(InIndex)
     , LeftEndPoint(InLeftEndPoint)
     , RightEndPoint(InRightEndPoint)
-    , LeftSite(InLeftSite)
-    , RightSite(InRightSite)
     {}
 
-    const int32 Index;
-    const FVector2D LeftEndPoint;
-    const FVector2D RightEndPoint;
-    const FVoronoiDiagramGeneratedSite LeftSite;
-    const FVoronoiDiagramGeneratedSite RightSite;
+    int32 Index;
+    FVector2D LeftEndPoint;
+    FVector2D RightEndPoint;
 };
+
+/*
+ *  Stores final information about a site that is returned in GenerateEdges
+ */
+struct FVoronoiDiagramGeneratedSite
+{
+public:
+    FVoronoiDiagramGeneratedSite(int32 InIndex, FVector2D InCoordinate, FVector2D InCentroid)
+    : Index(InIndex)
+    , Coordinate(InCoordinate)
+    , Centroid(InCentroid)
+    {}
+    
+    int32 Index;
+    FVector2D Coordinate;
+    FVector2D Centroid;
+    TArray<FVoronoiDiagramGeneratedEdge> Edges;
+};
+
 
 /*
  *  Generates Voronoi Diagram from a set of provided points
@@ -59,11 +59,11 @@ public:
     bool AddPoints(const TArray<FIntPoint>& Points);
     
     /*
-     *  Runs Fortune's Algorithm to generate edges for the diagram
+     *  Runs Fortune's Algorithm to generate sites with edges for the diagram
      *
-     *  @param  OutEdges    Array to fill with generated edges
+     *  @param  OutSites    Array to fill with sites
      */
-    void GenerateEdges(TArray<class FVoronoiDiagramGeneratedEdge>& OutEdges);
+    void GenerateSites(TArray<class FVoronoiDiagramGeneratedSite>& OutSites);
     
 private:
     /*
@@ -125,7 +125,7 @@ public:
     /*
      *  Creates a texture images of the Voronoi Diagram in the passed texture.  Assumes that points have already been added to the Voronoi Diagram
      */
-    static void GenerateTexture(FVoronoiDiagram VoronoiDiagram, class UTexture2D*& GeneratedTexture);
+    static void GenerateTexture(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, class UTexture2D*& GeneratedTexture);
 private:
     /*
      *  Calculates the index and, if valid, colors the pixel of the texture.  Assumes that MipData is valid and locked for writing.

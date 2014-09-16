@@ -16,7 +16,7 @@ The following code:
     FVoronoiDiagram VoronoiDiagram(FIntRect(0, 0, 4096, 4096));
     TArray<FIntPoint> Points;
     
-    for(int32 i = 0; i < 100; ++i)
+    for(int32 i = 0; i < 1000; ++i)
     {
         Points.AddUnique(FIntPoint(FMath::RandRange(0, 4095), FMath::RandRange(0, 4095)));
     }
@@ -33,14 +33,11 @@ Citations:
 Fortune's Algorithm as outlined in:
 Steve J. Fortune (1987). "A Sweepline Algorithm for Voronoi Diagrams". Algorithmica 2, 153-174. 
 
-Bresenham's line algorithm as outlined in:
-Bresenham, J. E. (1965). "Algorithm for computer control of a digital plotter". IBM Systems Journal 4 (1): 25–30
-
 Lloyd's algorithm as outlined in:
 Lloyd, Stuart P. (1982), "Least squares quantization in PCM", IEEE Transactions on Information Theory 28 (2): 129–137
 
-A Seed Fill Algorithm as outlined in:
-Heckbert, Paul (1990), "Graphics Gems", Academic Press
+Monotone Chain Convex Hull Algorithm outlined in:
+A. M. Andrew, "Another Efficient Algorithm for Convex Hulls in Two Dimensions", Info. Proc. Letters 9, 216-219 (1979)
 
 Based off of:
 ---------

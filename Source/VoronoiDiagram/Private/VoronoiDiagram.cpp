@@ -558,6 +558,7 @@ void FVoronoiDiagram::GenerateSites(TArray<FVoronoiDiagramGeneratedSite>& OutSit
     {
         TSharedPtr<FVoronoiDiagramSite> Site = (*SiteItr);
         FVoronoiDiagramGeneratedSite GeneratedSite(Site->Index, Site->GetCoordinate(), Site->Centroid);
+        GeneratedSite.Vertices.Append(Site->Vertices);
         
         for(auto EdgeItr(Site->Edges.CreateConstIterator()); EdgeItr; ++EdgeItr)
         {
@@ -652,7 +653,12 @@ void FVoronoiDiagramHelper::GenerateTexture(FVoronoiDiagram VoronoiDiagram, int3
             FVoronoiDiagramGeneratedSite CurrentSite = *Itr;
             CurrentPoints.Add(FIntPoint(FMath::RoundToInt(CurrentSite.Centroid.X), FMath::RoundToInt(CurrentSite.Centroid.Y)));
         }
-        CurrentDiagram.AddPoints(CurrentPoints);
+        
+        if(!CurrentDiagram.AddPoints(CurrentPoints))
+        {
+            UE_LOG(LogVoronoiDiagram, Error, TEXT("Issue with generating previous cycle's centroids. Aborting"));
+            break;
+        }
         
         GeneratedSites.Empty();
         CurrentDiagram.GenerateSites(GeneratedSites);
@@ -662,77 +668,67 @@ void FVoronoiDiagramHelper::GenerateTexture(FVoronoiDiagram VoronoiDiagram, int3
     {
         FVoronoiDiagramGeneratedSite CurrentSite = *SiteItr;
         
-        for(auto EdgeItr(CurrentSite.Edges.CreateConstIterator()); EdgeItr; ++EdgeItr)
+        if(CurrentSite.Vertices.Num() == 0)
         {
-            FVoronoiDiagramGeneratedEdge CurrentEdge = *EdgeItr;
-            
-            // Draw line - Bresenham's line algorithm
-            FVector2D PointA(CurrentEdge.LeftEndPoint);
-            FVector2D PointB(CurrentEdge.RightEndPoint);
-            
-            bool Steep = FMath::Abs(PointB.Y - PointA.Y) > FMath::Abs(PointB.X - PointA.X);
-
-            if(Steep)
-            {
-                PointA = FVector2D(PointA.Y, PointA.X);
-                PointB = FVector2D(PointB.Y, PointB.X);
-            }
-         
-            if(PointA.X > PointB.X)
-            {
-                float temp;
-                
-                temp = PointA.X;
-                PointA.X = PointB.X;
-                PointB.X = temp;
-                
-                temp = PointA.Y;
-                PointA.Y = PointB.Y;
-                PointB.Y = temp;
-            }
-            
-            FIntPoint Delta(PointB.X - PointA.X, FMath::Abs(PointB.Y - PointA.Y));
-            int32 Error = Delta.X / 2;
-            int32 YStep;
-            if(PointA.Y < PointB.Y)
-            {
-                YStep = 1;
-            }
-            else
-            {
-                YStep = -1;
-            }
-            
-            int32 y = PointA.Y;
-            for(int32 x = PointA.X; x <= PointB.X; ++x)
-            {
-                if(Steep)
-                {
-                    if(VoronoiDiagram.Bounds.Contains(FIntPoint(y, x)))
-                    {
-                        DrawOnMipData(MipData, FColor::Black, y, x, VoronoiDiagram.Bounds);
-                    }
-                }
-                else
-                {
-                    if(VoronoiDiagram.Bounds.Contains(FIntPoint(y, x)))
-                    {
-                        DrawOnMipData(MipData, FColor::Black, x, y, VoronoiDiagram.Bounds);
-                    }
-                }
-
-                Error -= Delta.Y;
-                if(Error < 0)
-                {
-                    y += YStep;
-                    Error += Delta.X;
-                }
-            }
-
+            continue;
         }
         
-        // Fill in
-        FVoronoiDiagramHelper::FillIn(MipData, CurrentSite.Coordinate.X, CurrentSite.Coordinate.Y, FColor::White, CurrentSite.Color, VoronoiDiagram.Bounds);
+        FVector2D MinimumVertex = CurrentSite.Vertices[0];
+        FVector2D MaximumVertex = CurrentSite.Vertices[0];
+        
+        for(int32 i = 1; i < CurrentSite.Vertices.Num(); ++i)
+        {
+            if( CurrentSite.Vertices[i].X < MinimumVertex.X )
+            {
+                MinimumVertex.X = CurrentSite.Vertices[i].X;
+            }
+
+            if( CurrentSite.Vertices[i].Y < MinimumVertex.Y )
+            {
+                MinimumVertex.Y = CurrentSite.Vertices[i].Y;
+            }
+            
+            if( CurrentSite.Vertices[i].X > MaximumVertex.X )
+            {
+                MaximumVertex.X = CurrentSite.Vertices[i].X;
+            }
+
+            if( CurrentSite.Vertices[i].Y > MaximumVertex.Y )
+            {
+                MaximumVertex.Y = CurrentSite.Vertices[i].Y;
+            }
+        }
+        
+        if(MinimumVertex.X < 0.0f)
+        {
+           MinimumVertex.X = 0.0f;
+        }
+        
+        if(MinimumVertex.Y < 0.0f)
+        {
+           MinimumVertex.Y = 0.0f;
+        }
+        
+        if(MaximumVertex.X > VoronoiDiagram.Bounds.Width())
+        {
+           MaximumVertex.X = VoronoiDiagram.Bounds.Width();
+        }
+        
+        if(MaximumVertex.Y > VoronoiDiagram.Bounds.Height())
+        {
+           MaximumVertex.Y = VoronoiDiagram.Bounds.Height();
+        }
+        
+        for(int32 x = MinimumVertex.X; x <= MaximumVertex.X; ++x)
+        {
+            for(int32 y = MinimumVertex.Y; y <= MaximumVertex.Y; ++y)
+            {
+                if(FVoronoiDiagramHelper::PointInVertices(FIntPoint(x, y), CurrentSite.Vertices))
+                {
+                    FVoronoiDiagramHelper::DrawOnMipData(MipData, CurrentSite.Color, x, y, VoronoiDiagram.Bounds);
+                }
+            }
+        }
     }
     
     // Unlock the texture
@@ -749,89 +745,30 @@ void FVoronoiDiagramHelper::DrawOnMipData(FColor* MipData, FColor Color, int32 X
     }
 }
 
-void FVoronoiDiagramHelper::FillIn(FColor* MipData, int32 x, int32 y, const FColor& TargetColor, const FColor& ReplacementColor, const FIntRect& Bounds)
+bool FVoronoiDiagramHelper::PointInVertices(FIntPoint Point, TArray<FVector2D> Vertices)
 {
-    // Seed Fill Algorithm
-    int32 l, x1, x2, dy;
-    TArray<FLineSegment> Stack;
-    
-    if(TargetColor == ReplacementColor || !Bounds.Contains(FIntPoint(x, y)))
-    {
-        return;
-    }
-    
-    FVoronoiDiagramHelper::FillInPush(Stack, y,     x, x,  1, Bounds);   // needed in some cases
-    FVoronoiDiagramHelper::FillInPush(Stack, y + 1, x, x, -1, Bounds);   // seed segment (popped 1st)
+    int32 i;
+    int32 j = Vertices.Num() - 1;
 
-    while(Stack.Num() > 0)
+    bool bOddNodes = false;
+
+    for( i = 0 ; i < Vertices.Num(); ++i )
     {
-        // pop segment off stack and fill a neighboring scan line
-        FVoronoiDiagramHelper::FillInPop(Stack, y, x1, x2, dy);
-        
-        // segment of scan line y-dy for x1<=x<=x2 was previously filled,
-        // now explore adjacent pixels in scan line y
-        for( x = x1; x >= 0 && MipData[x + y * Bounds.Width()] == TargetColor; --x)
+        if(
+            (Vertices[i].Y < Point.Y && Vertices[j].Y >= Point.Y || Vertices[j].Y < Point.Y && Vertices[i].Y >= Point.Y) &&
+            (Vertices[i].X <= Point.X || Vertices[j].X <= Point.X)
+        )
         {
-            MipData[x + y * Bounds.Width()] = ReplacementColor;
-        }
-        
-        if( x >= x1 )
-        {
-            goto skip;
-        }
-        
-        l = x + 1;
-        
-        if(l < x1 )
-        {
-            FVoronoiDiagramHelper::FillInPush(Stack, y, l, x1 - 1, -dy, Bounds); // leak on left?
-        }
-        x = x1 + 1;
-        
-        do
-        {
-            for(; x < Bounds.Width() && MipData[x + y * Bounds.Width()] == TargetColor; ++x)
+            if( Vertices[i].X + (Point.Y - Vertices[i].Y) / (Vertices[j].Y - Vertices[i].Y) * (Vertices[j].X - Vertices[i].X) < Point.X)
             {
-                MipData[x + y * Bounds.Width()] = ReplacementColor;
+                bOddNodes = !bOddNodes;
             }
-            
-            FVoronoiDiagramHelper::FillInPush(Stack, y, l, x - 1, dy, Bounds);
-            
-            if( x > x2 + 1)
-            {
-                FVoronoiDiagramHelper::FillInPush(Stack, y, x2 + 1, x - 1, -dy, Bounds); // leak on right?
-            }
-
-        skip:
-            for(x++; x <= x2 && MipData[x + y * Bounds.Width()] != TargetColor; ++x);
-            l = x;
-        } while ( x <= x2);
-    }
-}
-
-void FVoronoiDiagramHelper::FillInPush(TArray<FLineSegment>& Stack, int32 y, int32 xl, int32 xr, int32 dy, const FIntRect& Bounds)
-{
-    // push new segment on stack
-    if(!Bounds.Contains(FIntPoint(0, y + dy)))
-    {
-        return;
+        }
+        j = i;
     }
 
-    Stack.Add(FLineSegment(y, xl, xr, dy));
+    return bOddNodes;
 }
-
-void FVoronoiDiagramHelper::FillInPop(TArray<FLineSegment>& Stack, int32& y, int32& xl, int32& xr, int32& dy)
-{
-    FLineSegment TopSegment = Stack[Stack.Num() - 1];
-    Stack.RemoveAt(Stack.Num() - 1);
-    
-    y = TopSegment.y + TopSegment.dy;
-    xl = TopSegment.xl;
-    xr = TopSegment.xr;
-    dy = TopSegment.dy;
-}
-
-
 
 
 

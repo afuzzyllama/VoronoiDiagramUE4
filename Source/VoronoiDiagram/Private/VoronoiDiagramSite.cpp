@@ -27,10 +27,14 @@ float FVoronoiDiagramSite::GetDistanceFrom(TSharedPtr<IVoronoiDiagramPoint> Poin
 
 void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
 {
-
     TArray<FVector2D> SortedVertices;
-    TArray<FVoronoiDiagramGeneratedEdge> RemainingEdges;
 
+    // Gather all vertices from the edges
+    // Solve for corners
+    bool bHas_X_Min = false;
+    bool bHas_X_Max = false;
+    bool bHas_Min_Y = false;
+    bool bHas_Max_Y = false;
     for(auto Itr(Edges.CreateConstIterator()); Itr; ++Itr)
     {
         TSharedPtr<FVoronoiDiagramEdge> CurrentEdge = (*Itr);
@@ -44,221 +48,128 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             continue;
         }
         
-//        // For the centroid calculation, if there is an edge that is so small that it is almost a point, ignore it.  I believe this will make very little different when determining the centroid and will avoid rounding errors.
-//        if(
-//            FMath::IsNearlyEqual(CurrentEdge->LeftClippedEndPoint.X, CurrentEdge->RightClippedEndPoint.X, NOT_REALLY_KINDA_SMALL_NUMBER) &&
-//            FMath::IsNearlyEqual(CurrentEdge->LeftClippedEndPoint.Y, CurrentEdge->RightClippedEndPoint.Y, NOT_REALLY_KINDA_SMALL_NUMBER)
-//        )
-//        {
-//            continue;
-//        }
+        FVector2D LeftEndPoint = CurrentEdge->LeftClippedEndPoint;
+        FVector2D RightEndPoint = CurrentEdge->RightClippedEndPoint;
 
-        RemainingEdges.Add(FVoronoiDiagramGeneratedEdge(CurrentEdge->Index, CurrentEdge->LeftClippedEndPoint, CurrentEdge->RightClippedEndPoint));
+        // (x, Min)
+        if(FMath::IsNearlyZero(LeftEndPoint.Y, NOT_REALLY_KINDA_SMALL_NUMBER) || FMath::IsNearlyZero(RightEndPoint.Y, NOT_REALLY_KINDA_SMALL_NUMBER))
+        {
+            bHas_X_Min = true;
+        }
+
+        // (x, Max)
+        if(FMath::IsNearlyEqual(LeftEndPoint.Y, Bounds.Height(), NOT_REALLY_KINDA_SMALL_NUMBER) || FMath::IsNearlyEqual(RightEndPoint.Y, Bounds.Height(), NOT_REALLY_KINDA_SMALL_NUMBER))
+        {
+            bHas_X_Max = true;
+        }
+        
+        // (Min, y)
+        if(FMath::IsNearlyZero(LeftEndPoint.X, NOT_REALLY_KINDA_SMALL_NUMBER) || FMath::IsNearlyZero(RightEndPoint.X, NOT_REALLY_KINDA_SMALL_NUMBER))
+        {
+            bHas_Min_Y = true;
+        }
+
+        // (Max, y)
+        if(FMath::IsNearlyEqual(LeftEndPoint.X, Bounds.Width(), NOT_REALLY_KINDA_SMALL_NUMBER) || FMath::IsNearlyEqual(RightEndPoint.X, Bounds.Width(), NOT_REALLY_KINDA_SMALL_NUMBER))
+        {
+            bHas_Max_Y = true;
+        }
+        
+        SortedVertices.Add(LeftEndPoint);
+        SortedVertices.Add(RightEndPoint);
     }
     
-//    for(auto Itr(RemainingEdges.CreateConstIterator()); Itr; ++Itr)
-//    {
-//        FVoronoiDiagramGeneratedEdge CurrentEdge = *Itr;
-//        
-//        UE_LOG(LogVoronoiDiagram, Log, TEXT("Edge (%f, %f) -> (%f, %f)"), CurrentEdge.LeftEndPoint.X, CurrentEdge.LeftEndPoint.Y, CurrentEdge.RightEndPoint.X, CurrentEdge.RightEndPoint.Y);
-//    }
-    
-    FVector2D SearchVertex = RemainingEdges[0].RightEndPoint;
-    RemainingEdges.Add(FVoronoiDiagramGeneratedEdge(RemainingEdges[0].Index, RemainingEdges[0].LeftEndPoint, FVector2D(-1.0f, -1.0f)));
-    RemainingEdges.RemoveAt(0);
-
-    // If one is equal to (X.X, Min/Max) or (Min/Max, Y.Y) find the other point that has Min/Max on the same axis and create the edge.  If Min == Min or Max == Max, then create edge, If Min -> Max, create two edges with the corner
-    bool bDone = false;
-    while(!bDone)
+    // Add corners if applicable
+    // (x, Min) -> (Min, y)
+    // Min, Min Corner
+    if(bHas_X_Min && bHas_Min_Y)
     {
-        int32 RemoveIndex = -1;
-        for(int32 Index = 0; Index < RemainingEdges.Num(); ++Index)
-        {
-            FVector2D CurrentLeftVertex = RemainingEdges[Index].LeftEndPoint;
-            FVector2D CurrentRightVertex = RemainingEdges[Index].RightEndPoint;
-            
-            // (x, Min) -> (Min, y)
-            // Min, Min Corner
-            if(
-                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(CurrentLeftVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(FVector2D(0.0f, 0.0f));
-                SortedVertices.Add(CurrentLeftVertex);
-                SearchVertex = CurrentRightVertex;
-                RemoveIndex = Index;
-                break;
-            }
-            
-            if(
-                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentRightVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(CurrentRightVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(FVector2D(0.0f, 0.0f));
-                SortedVertices.Add(CurrentRightVertex);
-                SearchVertex = CurrentLeftVertex;
-                RemoveIndex = Index;
-                break;
-            }
-            
-            // x, Min -> Max, y
-            // Min, Max Corner
-            if(
-                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(CurrentLeftVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(FVector2D(Bounds.Width(), 0.0f));
-                SortedVertices.Add(CurrentLeftVertex);
-                SearchVertex = CurrentRightVertex;
-                RemoveIndex = Index;
-                break;
-            }
-            
-            if(
-                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(CurrentRightVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(FVector2D(static_cast<float>(Bounds.Width()), 0.0f));
-                SortedVertices.Add(CurrentRightVertex);
-                SearchVertex = CurrentLeftVertex;
-                RemoveIndex = Index;
-                break;
-            }
-            
-            // x, Max -> Min, y
-            // Max, Min Corner
-            if(
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(CurrentLeftVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(FVector2D(0.0f, static_cast<float>(Bounds.Height())));
-                SortedVertices.Add(CurrentLeftVertex);
-                SearchVertex = CurrentRightVertex;
-                RemoveIndex = Index;
-                break;
-            }
-            
-            if(
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentRightVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(CurrentRightVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(FVector2D(0.0f, static_cast<float>(Bounds.Height())));
-                SortedVertices.Add(CurrentRightVertex);
-                SearchVertex = CurrentLeftVertex;
-                RemoveIndex = Index;
-                break;
-            }
-            
-            // x, Max -> Max, y
-            // Max, Max Corner
-            if(
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(CurrentLeftVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(FVector2D(static_cast<float>(Bounds.Width()), static_cast<float>(Bounds.Height())));
-                SortedVertices.Add(CurrentLeftVertex);
-                SearchVertex = CurrentRightVertex;
-                RemoveIndex = Index;
-                break;
-            }
-            
-            if(
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(CurrentRightVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(FVector2D(static_cast<float>(Bounds.Width()), static_cast<float>(Bounds.Height())));
-                SortedVertices.Add(CurrentRightVertex);
-                SearchVertex = CurrentLeftVertex;
-                RemoveIndex = Index;
-                break;
-            }
-            
-            // Edges
-            if(
-                (FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(CurrentLeftVertex);
-                SearchVertex = CurrentRightVertex;
-                RemoveIndex = Index;
-                break;
-            }
-
-            if(
-                (FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentRightVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(SearchVertex.Y) && FMath::IsNearlyZero(CurrentRightVertex.Y)) ||
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER))
-            )
-            {
-                SortedVertices.Add(SearchVertex);
-                SortedVertices.Add(CurrentRightVertex);
-                SearchVertex = CurrentLeftVertex;
-                RemoveIndex = Index;
-                break;
-            }
-            
-            // Not an edge case
-            if(FMath::IsNearlyEqual(CurrentLeftVertex.X, SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.Y, SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER))
-            {
-                SortedVertices.Add(CurrentLeftVertex);
-                SearchVertex = CurrentRightVertex;
-                RemoveIndex = Index;
-                break;
-            }
-
-            if(FMath::IsNearlyEqual(CurrentRightVertex.X, SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.Y, SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER))
-            {
-                SortedVertices.Add(CurrentRightVertex);
-                SearchVertex = CurrentLeftVertex;
-                RemoveIndex = Index;
-                break;
-            }
-        }
-        
-        if(RemoveIndex != -1)
-        {
-            RemainingEdges.RemoveAt(RemoveIndex);
-        }
-        
-        if(RemainingEdges.Num() == 0 || RemoveIndex == -1 || SearchVertex == FVector2D(-1.0f, -1.0f))
-        {
-            bDone = true;
-        }
+        SortedVertices.Add(FVector2D(0.0f, 0.0f));
     }
     
-//    for(auto Itr(SortedVertices.CreateConstIterator()); Itr; ++Itr)
-//    {
-//        UE_LOG(LogVoronoiDiagram, Log, TEXT("Vertex (%f, %f)"), (*Itr).X, (*Itr).Y);
-//    }
+    // x, Min -> Max, y
+    // Min, Max Corner
+    if(bHas_X_Min && bHas_Max_Y)
+    {
+        SortedVertices.Add(FVector2D(Bounds.Width(), 0.0f));
+    }
+    
+    // x, Max -> Min, y
+    // Max, Min Corner
+    if(bHas_X_Min && bHas_Min_Y)
+    {
+        SortedVertices.Add(FVector2D(0.0f, static_cast<float>(Bounds.Height())));
+    }
+    
+    // x, Max -> Max, y
+    // Max, Max Corner
+    if(bHas_X_Max && bHas_Max_Y)
+    {
+        SortedVertices.Add(FVector2D(static_cast<float>(Bounds.Width()), static_cast<float>(Bounds.Height())));
+    }
 
+    // Monotone Chain
+    // Sort the vertices lexigraphically by X and then Y
+    struct FSortVertex
+    {
+        bool operator()(const FVector2D& A, const FVector2D& B) const
+        {
+            if(A.X < B.X)
+            {
+                return true;
+            }
+            
+            if(A.X > B.X)
+            {
+                return false;
+            }
+            
+            if(A.Y < B.Y)
+            {
+                return true;
+            }
+            
+            if(A.Y > B.Y)
+            {
+                return false;
+            }
+            return false;
+        }
+    };
+    SortedVertices.Sort(FSortVertex());
+    
+    TArray<FVector2D> LowerHull;
+    for(int32 i = 0; i < SortedVertices.Num(); ++i)
+    {
+        while(LowerHull.Num() >= 2 && Cross( LowerHull[ LowerHull.Num() - 2 ], LowerHull[ LowerHull.Num() - 1 ], SortedVertices[i]) <= 0)
+        {
+            LowerHull.RemoveAt(LowerHull.Num() - 1);
+        }
+        LowerHull.Add(SortedVertices[i]);
+    }
+    
+    TArray<FVector2D> UpperHull;
+    for(int32 i = SortedVertices.Num() - 1; i >= 0; --i)
+    {
+        while(UpperHull.Num() >= 2 && Cross( UpperHull[UpperHull.Num() - 2 ], UpperHull[UpperHull.Num() - 1 ], SortedVertices[i]) <= 0 )
+        {
+            UpperHull.RemoveAt(UpperHull.Num() - 1);
+        }
+        UpperHull.Add(SortedVertices[i]);
+    }
+    
+    // Remove last point because they are represented in the other list
+    UpperHull.RemoveAt(UpperHull.Num() - 1);
+    LowerHull.RemoveAt(LowerHull.Num() - 1);
+    
+    SortedVertices.Empty();
+    SortedVertices.Append(LowerHull);
+    SortedVertices.Append(UpperHull);
+
+    // Calculate Centroid
     Centroid = FVector2D::ZeroVector;
-
-    if(SortedVertices.Num() == 0)
-    {
-        // Something went wrong
-        return;
-    }
+    Vertices.Empty();
+    Vertices.Append(SortedVertices);
 
     FVector2D CurrentVertex;
     FVector2D NextVertex;
@@ -286,14 +197,17 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
     
     SignedArea *= 0.5f;
     Centroid = FVector2D( Centroid.X / (6.0f * SignedArea), Centroid.Y / (6.0f * SignedArea) );
-    
-//    UE_LOG(LogVoronoiDiagram, Log, TEXT("Centroid: (%f, %f)"), Centroid.X, Centroid.Y);
 }
 
 
 FVector2D FVoronoiDiagramSite::GetCoordinate() const
 {
     return Coordinate;
+}
+
+float FVoronoiDiagramSite::Cross(const FVector2D& O, const FVector2D& A, const FVector2D& B)
+{
+    return (A.X - O.X) * (B.Y - O.Y) - (A.Y - O.Y) * (B.X - O.X);
 }
 
 #undef NOT_REALLY_KINDA_SMALL_NUMBER

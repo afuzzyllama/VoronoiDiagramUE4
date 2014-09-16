@@ -20,7 +20,10 @@ public:
 
     int32 Index;
     FVector2D Coordinate;
+
     FVector2D Centroid;
+    TArray<FVector2D> Vertices;
+    
     TArray<TSharedPtr<class FVoronoiDiagramEdge>> Edges;
 
     /*
@@ -39,4 +42,9 @@ public:
 
 private:
     FVoronoiDiagramSite(int32 InIndex, FVector2D InCoordinate);
+    
+    /*
+     *  Cross as defined in Monotone Chain
+     */
+    float Cross(const FVector2D& O, const FVector2D& A, const FVector2D& B);
 };

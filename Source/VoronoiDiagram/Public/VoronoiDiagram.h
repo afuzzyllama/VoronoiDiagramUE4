@@ -26,8 +26,7 @@ struct FVoronoiDiagramGeneratedSite
 public:
     FVoronoiDiagramGeneratedSite(int32 InIndex, FVector2D InCoordinate, FVector2D InCentroid)
     : Index(InIndex)
-    // Never want true white or true black
-    , Color(FColor(FMath::RandRange(1,254), FMath::RandRange(1,254), FMath::RandRange(1,254)))
+    , Color(FColor(FMath::RandRange(0,255), FMath::RandRange(0,255), FMath::RandRange(0,255)))
     , Coordinate(InCoordinate)
     , Centroid(InCentroid)
     {}
@@ -37,6 +36,7 @@ public:
     FVector2D Coordinate;
     FVector2D Centroid;
     TArray<FVoronoiDiagramGeneratedEdge> Edges;
+    TArray<FVector2D> Vertices;
 };
 
 
@@ -146,12 +146,10 @@ private:
      *  Calculates the index and, if valid, colors the pixel of the texture.  Assumes that MipData is valid and locked for writing.
      */
     static void DrawOnMipData(class FColor* MipData, FColor Color, int32 X, int32 Y, FIntRect Bounds);
-
+    
     /*
-     * A Seed Fill Algorithm
+     *  Does the passed in point lie inside of the vertices passed in.  The verices are assumed to be sorted.
      */
-    static void FillIn(FColor* MipData, int32 x, int32 y, const FColor& TargetColor, const FColor& ReplacementColor, const FIntRect& Bounds);
-    static void FillInPush(TArray<FLineSegment>& Stack, int32 y, int32 xl, int32 xr, int32 dy, const FIntRect& Bounds);
-    static void FillInPop(TArray<FLineSegment>& Stack, int32& y, int32& xl, int32& xr, int32& dy);
+    static bool PointInVertices(FIntPoint Point, TArray<FVector2D> Vertices);
 };
 

@@ -662,11 +662,6 @@ void FVoronoiDiagramHelper::GenerateTexture(FVoronoiDiagram VoronoiDiagram, int3
     {
         FVoronoiDiagramGeneratedSite CurrentSite = *SiteItr;
         
-        // Draw site
-        DrawOnMipData(MipData, FColor::Red, CurrentSite.Coordinate.X, CurrentSite.Coordinate.Y, VoronoiDiagram.Bounds);
-        DrawOnMipData(MipData, FColor::Red, CurrentSite.Coordinate.X, CurrentSite.Coordinate.Y, VoronoiDiagram.Bounds);
-        DrawOnMipData(MipData, FColor::Green, CurrentSite.Centroid.X, CurrentSite.Centroid.Y, VoronoiDiagram.Bounds);
-        
         for(auto EdgeItr(CurrentSite.Edges.CreateConstIterator()); EdgeItr; ++EdgeItr)
         {
             FVoronoiDiagramGeneratedEdge CurrentEdge = *EdgeItr;
@@ -733,12 +728,11 @@ void FVoronoiDiagramHelper::GenerateTexture(FVoronoiDiagram VoronoiDiagram, int3
                     Error += Delta.X;
                 }
             }
-        
-        
-            // Draw vertices
-            DrawOnMipData(MipData, FColor::Blue, CurrentEdge.LeftEndPoint.X, CurrentEdge.LeftEndPoint.Y, VoronoiDiagram.Bounds);
-            DrawOnMipData(MipData, FColor::Blue, CurrentEdge.RightEndPoint.X, CurrentEdge.RightEndPoint.Y, VoronoiDiagram.Bounds);
+
         }
+        
+        // Fill in
+        FVoronoiDiagramHelper::FillIn(MipData, CurrentSite.Coordinate.X, CurrentSite.Coordinate.Y, FColor::White, CurrentSite.Color, VoronoiDiagram.Bounds);
     }
     
     // Unlock the texture
@@ -754,6 +748,111 @@ void FVoronoiDiagramHelper::DrawOnMipData(FColor* MipData, FColor Color, int32 X
         MipData[Index] = Color;
     }
 }
+
+void FVoronoiDiagramHelper::FillIn(FColor* MipData, int32 x, int32 y, const FColor& TargetColor, const FColor& ReplacementColor, const FIntRect& Bounds)
+{
+    // Seed Fill Algorithm
+    int32 l, x1, x2, dy;
+    TArray<FLineSegment> Stack;
+    
+    if(TargetColor == ReplacementColor || !Bounds.Contains(FIntPoint(x, y)))
+    {
+        return;
+    }
+    
+    FVoronoiDiagramHelper::FillInPush(Stack, y,     x, x,  1, Bounds);   // needed in some cases
+    FVoronoiDiagramHelper::FillInPush(Stack, y + 1, x, x, -1, Bounds);   // seed segment (popped 1st)
+
+    while(Stack.Num() > 0)
+    {
+        // pop segment off stack and fill a neighboring scan line
+        FVoronoiDiagramHelper::FillInPop(Stack, y, x1, x2, dy);
+        
+        // segment of scan line y-dy for x1<=x<=x2 was previously filled,
+        // now explore adjacent pixels in scan line y
+        for( x = x1; x >= 0 && MipData[x + y * Bounds.Width()] == TargetColor; --x)
+        {
+            MipData[x + y * Bounds.Width()] = ReplacementColor;
+        }
+        
+        if( x >= x1 )
+        {
+            goto skip;
+        }
+        
+        l = x + 1;
+        
+        if(l < x1 )
+        {
+            FVoronoiDiagramHelper::FillInPush(Stack, y, l, x1 - 1, -dy, Bounds); // leak on left?
+        }
+        x = x1 + 1;
+        
+        do
+        {
+            for(; x < Bounds.Width() && MipData[x + y * Bounds.Width()] == TargetColor; ++x)
+            {
+                MipData[x + y * Bounds.Width()] = ReplacementColor;
+            }
+            
+            FVoronoiDiagramHelper::FillInPush(Stack, y, l, x - 1, dy, Bounds);
+            
+            if( x > x2 + 1)
+            {
+                FVoronoiDiagramHelper::FillInPush(Stack, y, x2 + 1, x - 1, -dy, Bounds); // leak on right?
+            }
+
+        skip:
+            for(x++; x <= x2 && MipData[x + y * Bounds.Width()] != TargetColor; ++x);
+            l = x;
+        } while ( x <= x2);
+    }
+}
+
+void FVoronoiDiagramHelper::FillInPush(TArray<FLineSegment>& Stack, int32 y, int32 xl, int32 xr, int32 dy, const FIntRect& Bounds)
+{
+    // push new segment on stack
+    if(!Bounds.Contains(FIntPoint(0, y + dy)))
+    {
+        return;
+    }
+
+    Stack.Add(FLineSegment(y, xl, xr, dy));
+}
+
+void FVoronoiDiagramHelper::FillInPop(TArray<FLineSegment>& Stack, int32& y, int32& xl, int32& xr, int32& dy)
+{
+    FLineSegment TopSegment = Stack[Stack.Num() - 1];
+    Stack.RemoveAt(Stack.Num() - 1);
+    
+    y = TopSegment.y + TopSegment.dy;
+    xl = TopSegment.xl;
+    xr = TopSegment.xr;
+    dy = TopSegment.dy;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -13,12 +13,12 @@ The following code:
 
     UTexture2D* MyTexture;
     
-    FVoronoiDiagram VoronoiDiagram(FIntRect(0, 0, 512, 512));
+    FVoronoiDiagram VoronoiDiagram(FIntRect(0, 0, 4096, 4096));
     TArray<FIntPoint> Points;
     
     for(int32 i = 0; i < 100; ++i)
     {
-        Points.AddUnique(FIntPoint(FMath::RandRange(0, 511), FMath::RandRange(0, 511)));
+        Points.AddUnique(FIntPoint(FMath::RandRange(0, 4095), FMath::RandRange(0, 4095)));
     }
     VoronoiDiagram.AddPoints(Points);
 
@@ -38,6 +38,9 @@ Bresenham, J. E. (1965). "Algorithm for computer control of a digital plotter". 
 
 Lloyd's algorithm as outlined in:
 Lloyd, Stuart P. (1982), "Least squares quantization in PCM", IEEE Transactions on Information Theory 28 (2): 129–137
+
+A Seed Fill Algorithm as outlined in:
+Heckbert, Paul (1990), "Graphics Gems", Academic Press
 
 Based off of:
 ---------

@@ -26,11 +26,14 @@ struct FVoronoiDiagramGeneratedSite
 public:
     FVoronoiDiagramGeneratedSite(int32 InIndex, FVector2D InCoordinate, FVector2D InCentroid)
     : Index(InIndex)
+    // Never want true white or true black
+    , Color(FColor(FMath::RandRange(1,254), FMath::RandRange(1,254), FMath::RandRange(1,254)))
     , Coordinate(InCoordinate)
     , Centroid(InCentroid)
     {}
     
     int32 Index;
+    FColor Color;
     FVector2D Coordinate;
     FVector2D Centroid;
     TArray<FVoronoiDiagramGeneratedEdge> Edges;
@@ -127,9 +130,28 @@ public:
      */
     static void GenerateTexture(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, class UTexture2D*& GeneratedTexture);
 private:
+    struct FLineSegment
+    {
+        FLineSegment(float InY, float InXl, float InXr, float InDy)
+        : y(InY)
+        , xl(InXl)
+        , xr(InXr)
+        , dy(InDy)
+        {}
+        
+        float y, xl, xr, dy;
+    };
+
     /*
      *  Calculates the index and, if valid, colors the pixel of the texture.  Assumes that MipData is valid and locked for writing.
      */
     static void DrawOnMipData(class FColor* MipData, FColor Color, int32 X, int32 Y, FIntRect Bounds);
+
+    /*
+     * A Seed Fill Algorithm
+     */
+    static void FillIn(FColor* MipData, int32 x, int32 y, const FColor& TargetColor, const FColor& ReplacementColor, const FIntRect& Bounds);
+    static void FillInPush(TArray<FLineSegment>& Stack, int32 y, int32 xl, int32 xr, int32 dy, const FIntRect& Bounds);
+    static void FillInPop(TArray<FLineSegment>& Stack, int32& y, int32& xl, int32& xr, int32& dy);
 };
 

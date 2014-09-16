@@ -3,6 +3,8 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramSite.h"
 
+#define NOT_REALLY_KINDA_SMALL_NUMBER (1.e-2f)
+
 TSharedPtr<FVoronoiDiagramSite> FVoronoiDiagramSite::CreatePtr(int32 Index, FVector2D Coordinate)
 {
     return TSharedPtr<FVoronoiDiagramSite>(new FVoronoiDiagramSite(Index, Coordinate));
@@ -35,31 +37,31 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
 
         // Don't add edge that is (0,0) -> (0,0).  Increment Index if no edge is removed, otherwise the remove should do this shifting for us
         if(
-            FMath::IsNearlyZero(CurrentEdge->LeftClippedEndPoint.X, KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentEdge->LeftClippedEndPoint.Y, KINDA_SMALL_NUMBER)  &&
-            FMath::IsNearlyZero(CurrentEdge->RightClippedEndPoint.X, KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentEdge->RightClippedEndPoint.Y, KINDA_SMALL_NUMBER)
+            FMath::IsNearlyZero(CurrentEdge->LeftClippedEndPoint.X) && FMath::IsNearlyZero(CurrentEdge->LeftClippedEndPoint.Y)  &&
+            FMath::IsNearlyZero(CurrentEdge->RightClippedEndPoint.X) && FMath::IsNearlyZero(CurrentEdge->RightClippedEndPoint.Y)
         )
         {
             continue;
         }
         
-        // For the centroid calculation, if there is an edge that is so small that it is almost a point, ignore it.  I believe this will make very little different when determining the centroid and will avoid rounding errors.
-        if(
-            FMath::IsNearlyEqual(CurrentEdge->LeftClippedEndPoint.X, CurrentEdge->RightClippedEndPoint.X, KINDA_SMALL_NUMBER) &&
-            FMath::IsNearlyEqual(CurrentEdge->LeftClippedEndPoint.Y, CurrentEdge->RightClippedEndPoint.Y, KINDA_SMALL_NUMBER)
-        )
-        {
-            continue;
-        }
+//        // For the centroid calculation, if there is an edge that is so small that it is almost a point, ignore it.  I believe this will make very little different when determining the centroid and will avoid rounding errors.
+//        if(
+//            FMath::IsNearlyEqual(CurrentEdge->LeftClippedEndPoint.X, CurrentEdge->RightClippedEndPoint.X, NOT_REALLY_KINDA_SMALL_NUMBER) &&
+//            FMath::IsNearlyEqual(CurrentEdge->LeftClippedEndPoint.Y, CurrentEdge->RightClippedEndPoint.Y, NOT_REALLY_KINDA_SMALL_NUMBER)
+//        )
+//        {
+//            continue;
+//        }
 
         RemainingEdges.Add(FVoronoiDiagramGeneratedEdge(CurrentEdge->Index, CurrentEdge->LeftClippedEndPoint, CurrentEdge->RightClippedEndPoint));
     }
     
-    for(auto Itr(RemainingEdges.CreateConstIterator()); Itr; ++Itr)
-    {
-        FVoronoiDiagramGeneratedEdge CurrentEdge = *Itr;
-        
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("Edge (%f, %f) -> (%f, %f)"), CurrentEdge.LeftEndPoint.X, CurrentEdge.LeftEndPoint.Y, CurrentEdge.RightEndPoint.X, CurrentEdge.RightEndPoint.Y);
-    }
+//    for(auto Itr(RemainingEdges.CreateConstIterator()); Itr; ++Itr)
+//    {
+//        FVoronoiDiagramGeneratedEdge CurrentEdge = *Itr;
+//        
+//        UE_LOG(LogVoronoiDiagram, Log, TEXT("Edge (%f, %f) -> (%f, %f)"), CurrentEdge.LeftEndPoint.X, CurrentEdge.LeftEndPoint.Y, CurrentEdge.RightEndPoint.X, CurrentEdge.RightEndPoint.Y);
+//    }
     
     FVector2D SearchVertex = RemainingEdges[0].RightEndPoint;
     RemainingEdges.Add(FVoronoiDiagramGeneratedEdge(RemainingEdges[0].Index, RemainingEdges[0].LeftEndPoint, FVector2D(-1.0f, -1.0f)));
@@ -78,8 +80,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             // (x, Min) -> (Min, y)
             // Min, Min Corner
             if(
-                (FMath::IsNearlyZero(SearchVertex.Y, KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.X, KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(CurrentLeftVertex.Y, KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyZero(CurrentLeftVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -91,8 +93,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             }
             
             if(
-                (FMath::IsNearlyZero(SearchVertex.Y, KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentRightVertex.X, KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(CurrentRightVertex.Y, KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentRightVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyZero(CurrentRightVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -106,8 +108,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             // x, Min -> Max, y
             // Min, Max Corner
             if(
-                (FMath::IsNearlyZero(SearchVertex.Y, KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(CurrentLeftVertex.Y, KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyZero(CurrentLeftVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -119,8 +121,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             }
             
             if(
-                (FMath::IsNearlyZero(SearchVertex.Y, KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(CurrentRightVertex.Y, KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyZero(CurrentRightVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -134,8 +136,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             // x, Max -> Min, y
             // Max, Min Corner
             if(
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.X, KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(CurrentLeftVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyEqual(CurrentLeftVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -147,8 +149,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             }
             
             if(
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentRightVertex.X, KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(CurrentRightVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentRightVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyEqual(CurrentRightVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -162,8 +164,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             // x, Max -> Max, y
             // Max, Max Corner
             if(
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(CurrentLeftVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyEqual(CurrentLeftVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -175,8 +177,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             }
             
             if(
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(CurrentRightVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyEqual(CurrentRightVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -189,10 +191,10 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             
             // Edges
             if(
-                (FMath::IsNearlyZero(SearchVertex.X, KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.X, KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyZero(SearchVertex.Y, KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.Y, KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyZero(SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentLeftVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -203,10 +205,10 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             }
 
             if(
-                (FMath::IsNearlyZero(SearchVertex.X, KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentRightVertex.X, KINDA_SMALL_NUMBER)) ||
-                (FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.X, static_cast<float>(Bounds.Width()), KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyZero(SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyZero(CurrentRightVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER)) ||
+                (FMath::IsNearlyEqual(SearchVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.X, static_cast<float>(Bounds.Width()), NOT_REALLY_KINDA_SMALL_NUMBER)) ||
                 (FMath::IsNearlyZero(SearchVertex.Y) && FMath::IsNearlyZero(CurrentRightVertex.Y)) ||
-                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.Y, static_cast<float>(Bounds.Height()), KINDA_SMALL_NUMBER))
+                (FMath::IsNearlyEqual(SearchVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.Y, static_cast<float>(Bounds.Height()), NOT_REALLY_KINDA_SMALL_NUMBER))
             )
             {
                 SortedVertices.Add(SearchVertex);
@@ -217,7 +219,7 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
             }
             
             // Not an edge case
-            if(FMath::IsNearlyEqual(CurrentLeftVertex.X, SearchVertex.X, KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.Y, SearchVertex.Y, KINDA_SMALL_NUMBER))
+            if(FMath::IsNearlyEqual(CurrentLeftVertex.X, SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentLeftVertex.Y, SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER))
             {
                 SortedVertices.Add(CurrentLeftVertex);
                 SearchVertex = CurrentRightVertex;
@@ -225,7 +227,7 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
                 break;
             }
 
-            if(FMath::IsNearlyEqual(CurrentRightVertex.X, SearchVertex.X, KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.Y, SearchVertex.Y, KINDA_SMALL_NUMBER))
+            if(FMath::IsNearlyEqual(CurrentRightVertex.X, SearchVertex.X, NOT_REALLY_KINDA_SMALL_NUMBER) && FMath::IsNearlyEqual(CurrentRightVertex.Y, SearchVertex.Y, NOT_REALLY_KINDA_SMALL_NUMBER))
             {
                 SortedVertices.Add(CurrentRightVertex);
                 SearchVertex = CurrentLeftVertex;
@@ -245,10 +247,10 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
         }
     }
     
-    for(auto Itr(SortedVertices.CreateConstIterator()); Itr; ++Itr)
-    {
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("Vertex (%f, %f)"), (*Itr).X, (*Itr).Y);
-    }
+//    for(auto Itr(SortedVertices.CreateConstIterator()); Itr; ++Itr)
+//    {
+//        UE_LOG(LogVoronoiDiagram, Log, TEXT("Vertex (%f, %f)"), (*Itr).X, (*Itr).Y);
+//    }
 
     Centroid = FVector2D::ZeroVector;
 
@@ -285,7 +287,7 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
     SignedArea *= 0.5f;
     Centroid = FVector2D( Centroid.X / (6.0f * SignedArea), Centroid.Y / (6.0f * SignedArea) );
     
-    UE_LOG(LogVoronoiDiagram, Log, TEXT("Centroid: (%f, %f)"), Centroid.X, Centroid.Y);
+//    UE_LOG(LogVoronoiDiagram, Log, TEXT("Centroid: (%f, %f)"), Centroid.X, Centroid.Y);
 }
 
 
@@ -293,3 +295,5 @@ FVector2D FVoronoiDiagramSite::GetCoordinate() const
 {
     return Coordinate;
 }
+
+#undef NOT_REALLY_KINDA_SMALL_NUMBER

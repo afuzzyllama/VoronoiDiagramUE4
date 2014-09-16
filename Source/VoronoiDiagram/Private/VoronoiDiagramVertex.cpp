@@ -30,8 +30,7 @@ TSharedPtr<FVoronoiDiagramVertex> FVoronoiDiagramVertex::Intersect(TSharedPtr<FV
     
     Determinant = (EdgeA->a * EdgeB->b) - (EdgeA->b * EdgeB->a);
     
-    float AlmostZero = 0.0000000001f;
-    if (-AlmostZero < Determinant && Determinant < AlmostZero)
+    if (FMath::IsNearlyZero(Determinant))
     {
         // The edges are parallel
         return nullptr;

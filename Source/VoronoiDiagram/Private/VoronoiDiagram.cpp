@@ -557,7 +557,7 @@ void FVoronoiDiagram::GenerateSites(TArray<FVoronoiDiagramGeneratedSite>& OutSit
     for(auto SiteItr(Sites.CreateConstIterator()); SiteItr; ++SiteItr)
     {
         TSharedPtr<FVoronoiDiagramSite> Site = (*SiteItr);
-        FVoronoiDiagramGeneratedSite GeneratedSite(Site->Index, Site->GetCoordinate(), Site->Centroid);
+        FVoronoiDiagramGeneratedSite GeneratedSite(Site->Index, Site->GetCoordinate(), Site->Centroid, FColor(FMath::RandRange(0, 255), FMath::RandRange(0, 255), FMath::RandRange(0, 255)));
         GeneratedSite.Vertices.Append(Site->Vertices);
         
         for(auto EdgeItr(Site->Edges.CreateConstIterator()); EdgeItr; ++EdgeItr)

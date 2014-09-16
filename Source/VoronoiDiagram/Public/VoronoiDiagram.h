@@ -24,9 +24,9 @@ public:
 struct FVoronoiDiagramGeneratedSite
 {
 public:
-    FVoronoiDiagramGeneratedSite(int32 InIndex, FVector2D InCoordinate, FVector2D InCentroid)
+    FVoronoiDiagramGeneratedSite(int32 InIndex, FVector2D InCoordinate, FVector2D InCentroid, FColor InColor)
     : Index(InIndex)
-    , Color(FColor(FMath::RandRange(0,255), FMath::RandRange(0,255), FMath::RandRange(0,255)))
+    , Color(InColor)
     , Coordinate(InCoordinate)
     , Centroid(InCentroid)
     {}

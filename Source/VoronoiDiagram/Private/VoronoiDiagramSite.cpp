@@ -3,8 +3,6 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramSite.h"
 
-#define NOT_REALLY_KINDA_SMALL_NUMBER (1.e-2f)
-
 TSharedPtr<FVoronoiDiagramSite> FVoronoiDiagramSite::CreatePtr(int32 Index, FVector2D Coordinate)
 {
     return TSharedPtr<FVoronoiDiagramSite>(new FVoronoiDiagramSite(Index, Coordinate));
@@ -13,6 +11,8 @@ TSharedPtr<FVoronoiDiagramSite> FVoronoiDiagramSite::CreatePtr(int32 Index, FVec
 FVoronoiDiagramSite::FVoronoiDiagramSite(int32 InIndex, FVector2D InCoordinate)
 : Index(InIndex)
 , Coordinate(InCoordinate)
+, bIsCorner(false)
+, bIsEdge(false)
 {}
 
 float FVoronoiDiagramSite::GetDistanceFrom(TSharedPtr<IVoronoiDiagramPoint> Point)
@@ -41,8 +41,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
 
         // Don't add edge that is (0,0) -> (0,0).  Increment Index if no edge is removed, otherwise the remove should do this shifting for us
         if(
-            FMath::IsNearlyZero(CurrentEdge->LeftClippedEndPoint.X) && FMath::IsNearlyZero(CurrentEdge->LeftClippedEndPoint.Y)  &&
-            FMath::IsNearlyZero(CurrentEdge->RightClippedEndPoint.X) && FMath::IsNearlyZero(CurrentEdge->RightClippedEndPoint.Y)
+            FMath::IsNearlyEqual(CurrentEdge->LeftClippedEndPoint.X, FLT_MIN) && FMath::IsNearlyEqual(CurrentEdge->LeftClippedEndPoint.Y, FLT_MIN)  &&
+            FMath::IsNearlyEqual(CurrentEdge->RightClippedEndPoint.X, FLT_MIN) && FMath::IsNearlyEqual(CurrentEdge->RightClippedEndPoint.Y, FLT_MIN)
         )
         {
             continue;
@@ -82,30 +82,56 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
     // Add corners if applicable
     // (x, Min) -> (Min, y)
     // Min, Min Corner
+    bool bDisplay = false;
     if(bHas_X_Min && bHas_Min_Y)
     {
+        UE_LOG(LogVoronoiDiagram, Log, TEXT("bHas_X_Min && bHas_Min_Y"));
         SortedVertices.Add(FVector2D(0.0f, 0.0f));
+        bIsCorner = true;
+        bDisplay = true;
     }
     
     // x, Min -> Max, y
     // Min, Max Corner
     if(bHas_X_Min && bHas_Max_Y)
     {
+        UE_LOG(LogVoronoiDiagram, Log, TEXT("bHas_X_Min && bHas_Max_Y"));
         SortedVertices.Add(FVector2D(Bounds.Width(), 0.0f));
+        bIsCorner = true;
+        bDisplay = true;
     }
     
     // x, Max -> Min, y
     // Max, Min Corner
-    if(bHas_X_Min && bHas_Min_Y)
+    if(bHas_X_Max && bHas_Min_Y)
     {
+        UE_LOG(LogVoronoiDiagram, Log, TEXT("bHas_X_Max && bHas_Min_Y"));
         SortedVertices.Add(FVector2D(0.0f, static_cast<float>(Bounds.Height())));
+        bIsCorner = true;
+        bDisplay = true;
     }
     
     // x, Max -> Max, y
     // Max, Max Corner
     if(bHas_X_Max && bHas_Max_Y)
     {
+        UE_LOG(LogVoronoiDiagram, Log, TEXT("bHas_X_Max && bHas_Max_Y"));
         SortedVertices.Add(FVector2D(static_cast<float>(Bounds.Width()), static_cast<float>(Bounds.Height())));
+        bIsCorner = true;
+        bDisplay = true;
+    }
+    
+    if(bHas_X_Min || bHas_X_Max || bHas_Min_Y || bHas_Max_Y)
+    {
+        bIsEdge = true;
+    }
+    
+    if(bDisplay)
+    {
+        for(auto Itr(Edges.CreateConstIterator()); Itr; ++Itr)
+        {
+            UE_LOG(LogVoronoiDiagram, Log, TEXT("Edge (%f, %f) -> (%f, %f)"), (*Itr)->LeftClippedEndPoint.X, (*Itr)->LeftClippedEndPoint.Y, (*Itr)->RightClippedEndPoint.X, (*Itr)->RightClippedEndPoint.Y);
+        }
     }
 
     // Monotone Chain
@@ -141,7 +167,7 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
     TArray<FVector2D> LowerHull;
     for(int32 i = 0; i < SortedVertices.Num(); ++i)
     {
-        while(LowerHull.Num() >= 2 && Cross( LowerHull[ LowerHull.Num() - 2 ], LowerHull[ LowerHull.Num() - 1 ], SortedVertices[i]) <= 0)
+        while(LowerHull.Num() >= 2 && (Cross( LowerHull[ LowerHull.Num() - 2 ], LowerHull[ LowerHull.Num() - 1 ], SortedVertices[i]) < 0.0f || FMath::IsNearlyZero(Cross( LowerHull[ LowerHull.Num() - 2 ], LowerHull[ LowerHull.Num() - 1 ], SortedVertices[i]))))
         {
             LowerHull.RemoveAt(LowerHull.Num() - 1);
         }
@@ -151,7 +177,7 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
     TArray<FVector2D> UpperHull;
     for(int32 i = SortedVertices.Num() - 1; i >= 0; --i)
     {
-        while(UpperHull.Num() >= 2 && Cross( UpperHull[UpperHull.Num() - 2 ], UpperHull[UpperHull.Num() - 1 ], SortedVertices[i]) <= 0 )
+        while(UpperHull.Num() >= 2 && (Cross( UpperHull[ UpperHull.Num() - 2 ], UpperHull[ UpperHull.Num() - 1 ], SortedVertices[i]) < 0.0f || FMath::IsNearlyZero(Cross( UpperHull[ UpperHull.Num() - 2 ], UpperHull[ UpperHull.Num() - 1 ], SortedVertices[i]))))
         {
             UpperHull.RemoveAt(UpperHull.Num() - 1);
         }
@@ -165,6 +191,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
     SortedVertices.Empty();
     SortedVertices.Append(LowerHull);
     SortedVertices.Append(UpperHull);
+
+
 
     // Calculate Centroid
     Centroid = FVector2D::ZeroVector;
@@ -197,6 +225,16 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
     
     SignedArea *= 0.5f;
     Centroid = FVector2D( Centroid.X / (6.0f * SignedArea), Centroid.Y / (6.0f * SignedArea) );
+  
+//    UE_LOG(LogVoronoiDiagram, Log, TEXT("Centroid (%f, %f)"), Centroid.X, Centroid.Y);
+//    if(Centroid.X == NAN || Centroid.Y == NAN)
+//    {
+//        UE_LOG(LogVoronoiDiagram, Log, TEXT("Centroid (%f, %f)"), Centroid.X, Centroid.Y);
+//        for(auto Itr(SortedVertices.CreateConstIterator()); Itr; ++Itr)
+//        {
+//            UE_LOG(LogVoronoiDiagram, Log, TEXT("Vertex (%f, %f)"), (*Itr).X, (*Itr).Y);
+//        }
+//    }
 }
 
 
@@ -209,5 +247,3 @@ float FVoronoiDiagramSite::Cross(const FVector2D& O, const FVector2D& A, const F
 {
     return (A.X - O.X) * (B.Y - O.Y) - (A.Y - O.Y) * (B.X - O.X);
 }
-
-#undef NOT_REALLY_KINDA_SMALL_NUMBER

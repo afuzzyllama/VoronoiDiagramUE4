@@ -42,7 +42,7 @@ TSharedPtr<FVoronoiDiagramVertex> FVoronoiDiagramVertex::Intersect(TSharedPtr<FV
     if(
         EdgeA->RightSite->GetCoordinate().Y < EdgeB->RightSite->GetCoordinate().Y ||
         (
-            EdgeA->RightSite->GetCoordinate().Y == EdgeB->RightSite->GetCoordinate().Y &&
+            FMath::IsNearlyEqual(EdgeA->RightSite->GetCoordinate().Y, EdgeB->RightSite->GetCoordinate().Y) &&
             EdgeA->RightSite->GetCoordinate().X < EdgeB->RightSite->GetCoordinate().X
         )
     )

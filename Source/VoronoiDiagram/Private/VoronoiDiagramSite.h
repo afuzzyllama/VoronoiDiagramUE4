@@ -23,6 +23,8 @@ public:
 
     FVector2D Centroid;
     TArray<FVector2D> Vertices;
+    bool bIsCorner;
+    bool bIsEdge;
     
     TArray<TSharedPtr<class FVoronoiDiagramEdge>> Edges;
 

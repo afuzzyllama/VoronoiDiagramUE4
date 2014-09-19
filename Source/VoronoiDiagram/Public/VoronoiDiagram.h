@@ -123,8 +123,8 @@ public:
                 // Infinite loop check
                 if((Bucket - Index) < 0 && (Bucket + Index) >= Hash.Num())
                 {
-                    UE_LOG(LogVoronoiDiagram, Log, TEXT("(Bucket - Index) < 0 && (Bucket + Index) >= Hash.Num())"));
-                    UE_LOG(LogVoronoiDiagram, Log, TEXT("(%i) < 0 && (%i) >= %i)"), Bucket - Index, Bucket + Index, Hash.Num());
+                    UE_LOG(LogVoronoiDiagram, Error, TEXT("(Bucket - Index) < 0 && (Bucket + Index) >= Hash.Num())"));
+                    UE_LOG(LogVoronoiDiagram, Error, TEXT("(%i) < 0 && (%i) >= %i)"), Bucket - Index, Bucket + Index, Hash.Num());
                     check(false);
                 }
             }

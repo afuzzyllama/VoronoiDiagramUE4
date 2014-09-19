@@ -82,56 +82,39 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
     // Add corners if applicable
     // (x, Min) -> (Min, y)
     // Min, Min Corner
-    bool bDisplay = false;
     if(bHas_X_Min && bHas_Min_Y)
     {
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("bHas_X_Min && bHas_Min_Y"));
         SortedVertices.Add(FVector2D(0.0f, 0.0f));
         bIsCorner = true;
-        bDisplay = true;
     }
     
     // x, Min -> Max, y
     // Min, Max Corner
     if(bHas_X_Min && bHas_Max_Y)
     {
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("bHas_X_Min && bHas_Max_Y"));
         SortedVertices.Add(FVector2D(Bounds.Width(), 0.0f));
         bIsCorner = true;
-        bDisplay = true;
     }
     
     // x, Max -> Min, y
     // Max, Min Corner
     if(bHas_X_Max && bHas_Min_Y)
     {
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("bHas_X_Max && bHas_Min_Y"));
         SortedVertices.Add(FVector2D(0.0f, static_cast<float>(Bounds.Height())));
         bIsCorner = true;
-        bDisplay = true;
     }
     
     // x, Max -> Max, y
     // Max, Max Corner
     if(bHas_X_Max && bHas_Max_Y)
     {
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("bHas_X_Max && bHas_Max_Y"));
         SortedVertices.Add(FVector2D(static_cast<float>(Bounds.Width()), static_cast<float>(Bounds.Height())));
         bIsCorner = true;
-        bDisplay = true;
     }
     
     if(bHas_X_Min || bHas_X_Max || bHas_Min_Y || bHas_Max_Y)
     {
         bIsEdge = true;
-    }
-    
-    if(bDisplay)
-    {
-        for(auto Itr(Edges.CreateConstIterator()); Itr; ++Itr)
-        {
-            UE_LOG(LogVoronoiDiagram, Log, TEXT("Edge (%f, %f) -> (%f, %f)"), (*Itr)->LeftClippedEndPoint.X, (*Itr)->LeftClippedEndPoint.Y, (*Itr)->RightClippedEndPoint.X, (*Itr)->RightClippedEndPoint.Y);
-        }
     }
 
     // Monotone Chain

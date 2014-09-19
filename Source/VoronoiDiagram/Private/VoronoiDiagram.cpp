@@ -85,11 +85,6 @@ bool FVoronoiDiagram::AddPoints(const TArray<FIntPoint>& Points)
     MaxValues = MakeShareable(new FVector2D(CurrentMax));
     DeltaValues = MakeShareable(new FVector2D(CurrentMax.X - CurrentMin.X, CurrentMax.Y - CurrentMin.Y));
 
-    for(auto Itr(Sites.CreateConstIterator()); Itr; ++Itr)
-    {
-        UE_LOG(LogVoronoiDiagram, Log, TEXT("Site #%i: (%f, %f)"), (*Itr)->Index, (*Itr)->GetCoordinate().X, (*Itr)->GetCoordinate().Y);
-    }
-
     return true;
 }
 

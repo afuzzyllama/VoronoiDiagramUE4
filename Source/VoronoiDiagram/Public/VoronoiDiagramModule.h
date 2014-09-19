@@ -3,7 +3,6 @@
 #pragma once
 
 #include "ModuleManager.h"
-#include "VoronoiDiagram.h"
 
 /**
  * The public interface to this module.  In most cases, this interface is only public to sibling modules

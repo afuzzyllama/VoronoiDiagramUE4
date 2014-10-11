@@ -18,6 +18,9 @@ public:
      */
     static TSharedPtr<FVoronoiDiagramVertex> CreatePtr(int32 Index, FVector2D Coordinate);
     
+    // Needed for TSharedPtr
+    virtual ~FVoronoiDiagramVertex(){}
+    
     int32 Index;
     FVector2D Coordinate;
     
@@ -31,7 +34,7 @@ public:
     static TSharedPtr<FVoronoiDiagramVertex> Intersect(TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdgeA, TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdgeB);
 
     // Begin IVoronoiDiagramPoint
-    virtual FVector2D GetCoordinate() const override;
+    virtual FVector2D GetCoordinate() const OVERRIDE;
     // End of IVoronoiDiagramPoint
 
 

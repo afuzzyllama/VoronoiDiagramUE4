@@ -20,7 +20,8 @@ public:
     TArray<TSharedPtr<FVoronoiDiagramHalfEdge>> Hash;
     TSharedPtr<FVoronoiDiagramHalfEdge> LeftEnd;
     TSharedPtr<FVoronoiDiagramHalfEdge> RightEnd;
-    TSharedPtr<FVector2D> MinimumValues, DeltaValues;
+    TSharedPtr<FVector2D> MinimumValues;
+    TSharedPtr<FVector2D> DeltaValues;
     
     FVoronoiDiagramEdgeList(int32 NumberOfSites, TSharedPtr<FVector2D> InMinimumValues, TSharedPtr<FVector2D> InDeltaValues)
     : MinimumValues(InMinimumValues)
@@ -170,15 +171,17 @@ public:
 class FVoronoiDiagramPriorityQueue
 {
 public:
-    int32 MinimumBucket, Count;
+    int32 MinimumBucket;
+    int32 Count;
     TArray<TSharedPtr<FVoronoiDiagramHalfEdge>> Hash;
-    TSharedPtr<FVector2D> MinimumValues, DeltaValues;
+    TSharedPtr<FVector2D> MinimumValues;
+    TSharedPtr<FVector2D> DeltaValues;
     
     FVoronoiDiagramPriorityQueue(int32 NumberOfSites, TSharedPtr<FVector2D> InMinimumValues, TSharedPtr<FVector2D> InDeltaValues)
-    : MinimumValues(InMinimumValues)
-    , DeltaValues(InDeltaValues)
-    , MinimumBucket(0)
+    : MinimumBucket(0)
     , Count(0)
+    , MinimumValues(InMinimumValues)
+    , DeltaValues(InDeltaValues)
     {
         // Create an array full of dummies that represent the beginning of a bucket
         for(int32 i = 0; i < 4 * FMath::Sqrt(NumberOfSites); ++i)

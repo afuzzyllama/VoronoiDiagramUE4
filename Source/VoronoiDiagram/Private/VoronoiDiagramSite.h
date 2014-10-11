@@ -18,6 +18,9 @@ public:
      */
     static TSharedPtr<FVoronoiDiagramSite> CreatePtr(int32 Index, FVector2D Coordinate);
 
+    // Needed for TSharedPtr
+    virtual ~FVoronoiDiagramSite(){}
+
     int32 Index;
     FVector2D Coordinate;
 
@@ -39,7 +42,7 @@ public:
     void GenerateCentroid(FIntRect Bounds);
     
     // Begin IVoronoiDiagramPoint
-    virtual FVector2D GetCoordinate() const override;
+    virtual FVector2D GetCoordinate() const OVERRIDE;
     // end of IVoronoiDiagramPoint
 
 private:

@@ -1,4 +1,4 @@
-// Copyright 2014 afuzzyllama. All Rights Reserved.
+// Copyright 2015 afuzzyllama. All Rights Reserved.
 
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramVertex.h"
@@ -72,7 +72,8 @@ FVoronoiDiagramVertex::FVoronoiDiagramVertex(int32 InIndex, FVector2D InCoordina
 : Index(InIndex)
 , Coordinate(InCoordinate)
 {
-    if(Coordinate.X == NAN || Coordinate.Y == NAN)
+	// float != float == NAN
+	if (Coordinate.X != Coordinate.X || Coordinate.Y != Coordinate.Y)
     {
         // This probably should not happen, but it will alert in the logs if it does
         UE_LOG(LogVoronoiDiagram, Error, TEXT("Contains NaN"));

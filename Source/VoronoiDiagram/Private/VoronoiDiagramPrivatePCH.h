@@ -1,4 +1,4 @@
-// Copyright 2014 afuzzyllama. All Rights Reserved.
+// Copyright 2015 afuzzyllama. All Rights Reserved.
 #pragma once
 
 #define NOT_REALLY_KINDA_SMALL_NUMBER (1.e-2f)

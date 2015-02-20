@@ -1,4 +1,4 @@
-// Copyright 2014 afuzzyllama. All Rights Reserved.
+// Copyright 2015 afuzzyllama. All Rights Reserved.
 #pragma once
 
 #include "IVoronoiDiagramPoint.h"
@@ -42,7 +42,7 @@ public:
     void GenerateCentroid(FIntRect Bounds);
     
     // Begin IVoronoiDiagramPoint
-    virtual FVector2D GetCoordinate() const OVERRIDE;
+    virtual FVector2D GetCoordinate() const;
     // end of IVoronoiDiagramPoint
 
 private:

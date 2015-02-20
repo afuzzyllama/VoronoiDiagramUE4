@@ -1,8 +1,9 @@
-// Copyright 2014 afuzzyllama. All Rights Reserved.
+// Copyright 2015 afuzzyllama. All Rights Reserved.
 
 #include "VoronoiDiagramPrivatePCH.h"
-#include "VoronoiDiagramModule.h"
 #include "VoronoiDiagram.h"
+
+#include "ImageUtils.h"
 
 FVoronoiDiagram::FVoronoiDiagram(FIntRect InBounds)
 : Bounds(InBounds)
@@ -247,6 +248,43 @@ void FVoronoiDiagramHelper::GenerateTexture(FVoronoiDiagram VoronoiDiagram, int3
     // Unlock the texture
     GeneratedTexture->PlatformData->Mips[0].BulkData.Unlock();
     GeneratedTexture->UpdateResource();
+}
+
+void FVoronoiDiagramHelper::GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, FString FilePath)
+{
+	UTexture2D* Texture2D = UTexture2D::CreateTransient(VoronoiDiagram.Bounds.Width(), VoronoiDiagram.Bounds.Height());
+	FVoronoiDiagramHelper::GenerateTexture(VoronoiDiagram, RelaxationCycles, Texture2D);
+
+	TArray<FColor> TextureColors;
+
+	FColor* MipData = static_cast<FColor*>(Texture2D->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
+
+	for (int32 x = 0; x < VoronoiDiagram.Bounds.Width(); ++x)
+	{
+		for (int32 y = 0; y < VoronoiDiagram.Bounds.Height(); ++y)
+		{
+			TextureColors.Add(MipData[x + y * VoronoiDiagram.Bounds.Width()]);
+		}
+	}
+	
+	Texture2D->PlatformData->Mips[0].BulkData.Unlock();
+	Texture2D->ReleaseResource();
+	Texture2D->MarkPendingKill();
+
+	TArray<uint8> PNGData;
+	
+	FImageUtils::CompressImageArray(
+		VoronoiDiagram.Bounds.Width(),
+		VoronoiDiagram.Bounds.Height(),
+		TextureColors,
+		PNGData
+	);
+
+	FFileHelper::SaveArrayToFile(
+		PNGData,
+		*FilePath,
+		&IFileManager::Get()
+		);
 }
 
 void FVoronoiDiagramHelper::DrawOnMipData(FColor* MipData, FColor Color, int32 X, int32 Y, FIntRect Bounds)

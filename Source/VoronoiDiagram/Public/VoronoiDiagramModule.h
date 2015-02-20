@@ -1,4 +1,4 @@
-// Copyright 2014 afuzzyllama. All Rights Reserved.
+// Copyright 2015 afuzzyllama. All Rights Reserved.
 
 #pragma once
 
@@ -34,7 +34,7 @@ public:
 	}
 
     // Begin IModuleInterface implementation
-	virtual void StartupModule() OVERRIDE;
-	virtual void ShutdownModule() OVERRIDE;
+	virtual void StartupModule();
+	virtual void ShutdownModule();
     // End IModuleInterface implementation
 };

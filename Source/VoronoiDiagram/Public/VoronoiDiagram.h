@@ -1,4 +1,4 @@
-// Copyright 2014 afuzzyllama. All Rights Reserved.
+// Copyright 2015 afuzzyllama. All Rights Reserved.
 #pragma once
 
 #include "../Private/VoronoiDiagramPrivatePCH.h"
@@ -601,6 +601,11 @@ public:
      */
     static void GenerateTexture(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, class UTexture2D*& GeneratedTexture);
 
+	/*
+	 * Creates a PNG file of the Voronoi Diagram to the supplied file path.  Assumes that points have already been added to Voronoi Diagram 
+	 */
+	static void GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, FString FilePath);
+
     /*
      *  Calculates the index and, if valid, colors the pixel of the texture.  Assumes that MipData is valid and locked for writing.
      */
@@ -624,4 +629,3 @@ private:
         float y, xl, xr, dy;
     };
 };
-

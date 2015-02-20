@@ -1,4 +1,4 @@
-// Copyright 2014 afuzzyllama. All Rights Reserved.
+// Copyright 2015 afuzzyllama. All Rights Reserved.
 #pragma once
 
 #include "IVoronoiDiagramPoint.h"
@@ -34,7 +34,7 @@ public:
     static TSharedPtr<FVoronoiDiagramVertex> Intersect(TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdgeA, TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdgeB);
 
     // Begin IVoronoiDiagramPoint
-    virtual FVector2D GetCoordinate() const OVERRIDE;
+    virtual FVector2D GetCoordinate() const;
     // End of IVoronoiDiagramPoint
 
 

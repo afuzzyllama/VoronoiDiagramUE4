@@ -304,7 +304,7 @@ public:
 /*
  *  Generates Voronoi Diagram from a set of provided points
  */
-class FVoronoiDiagram
+class VORONOIDIAGRAM_API FVoronoiDiagram
 {
 public:
     /*
@@ -593,7 +593,7 @@ private:
     friend class FVoronoiDiagramHelper;
 };
 
-class FVoronoiDiagramHelper
+class VORONOIDIAGRAM_API FVoronoiDiagramHelper
 {
 public:
     /*
@@ -604,7 +604,7 @@ public:
 	/*
 	 * Creates a PNG file of the Voronoi Diagram to the supplied file path.  Assumes that points have already been added to Voronoi Diagram 
 	 */
-	static void GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, FString FilePath);
+	static void GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, TArray<uint8>& PNGData);
 
     /*
      *  Calculates the index and, if valid, colors the pixel of the texture.  Assumes that MipData is valid and locked for writing.

@@ -250,7 +250,7 @@ void FVoronoiDiagramHelper::GenerateTexture(FVoronoiDiagram VoronoiDiagram, int3
     GeneratedTexture->UpdateResource();
 }
 
-void FVoronoiDiagramHelper::GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, FString FilePath)
+void FVoronoiDiagramHelper::GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, TArray<uint8>& PNGData)
 {
 	UTexture2D* Texture2D = UTexture2D::CreateTransient(VoronoiDiagram.Bounds.Width(), VoronoiDiagram.Bounds.Height());
 	FVoronoiDiagramHelper::GenerateTexture(VoronoiDiagram, RelaxationCycles, Texture2D);
@@ -271,8 +271,7 @@ void FVoronoiDiagramHelper::GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 Re
 	Texture2D->ReleaseResource();
 	Texture2D->MarkPendingKill();
 
-	TArray<uint8> PNGData;
-	
+	PNGData.Empty();
 	FImageUtils::CompressImageArray(
 		VoronoiDiagram.Bounds.Width(),
 		VoronoiDiagram.Bounds.Height(),
@@ -280,11 +279,7 @@ void FVoronoiDiagramHelper::GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 Re
 		PNGData
 	);
 
-	FFileHelper::SaveArrayToFile(
-		PNGData,
-		*FilePath,
-		&IFileManager::Get()
-		);
+	return;
 }
 
 void FVoronoiDiagramHelper::DrawOnMipData(FColor* MipData, FColor Color, int32 X, int32 Y, FIntRect Bounds)
@@ -320,58 +315,3 @@ bool FVoronoiDiagramHelper::PointInVertices(FIntPoint Point, TArray<FVector2D> V
 
     return bOddNodes;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

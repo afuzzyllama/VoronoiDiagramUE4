@@ -596,21 +596,24 @@ private:
 class VORONOIDIAGRAM_API FVoronoiDiagramHelper
 {
 public:
-    /*
+	/*
+	* Creates an array of colors of the Voronoi Diagram to the supplied TArray<FColor>.  Assumes that points have already been added to Voronoi Diagram.
+	* This can be safely called from a thread
+	*/
+	static void GenerateColorArray(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, TArray<FColor>& ColorData);
+	
+	/*
      *  Creates a texture images of the Voronoi Diagram in the passed texture.  Assumes that points have already been added to the Voronoi Diagram
+	 *  This has to be called from the game thread
      */
     static void GenerateTexture(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, class UTexture2D*& GeneratedTexture);
-
+			
 	/*
-	 * Creates a PNG file of the Voronoi Diagram to the supplied file path.  Assumes that points have already been added to Voronoi Diagram 
+	 * Creates a PNG file of the Voronoi Diagram to the supplied TArray<uint8>.  Assumes that points have already been added to Voronoi Diagram 
+	 * This has to be called from the game thread
 	 */
 	static void GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, TArray<uint8>& PNGData);
-
-    /*
-     *  Calculates the index and, if valid, colors the pixel of the texture.  Assumes that MipData is valid and locked for writing.
-     */
-    static void DrawOnMipData(class FColor* MipData, FColor Color, int32 X, int32 Y, FIntRect Bounds);
-    
+	    
     /*
      *  Does the passed in point lie inside of the vertices passed in.  The verices are assumed to be sorted.
      */

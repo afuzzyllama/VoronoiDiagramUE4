@@ -609,7 +609,7 @@ public:
     /*
      *  Calculates the index and, if valid, colors the pixel of the texture.  Assumes that MipData is valid and locked for writing.
      */
-    static void DrawOnMipData(class FColor* MipData, FColor Color, int32 X, int32 Y, FIntRect Bounds);
+    static void DrawOnMipData(struct FColor* MipData, FColor Color, int32 X, int32 Y, FIntRect Bounds);
     
     /*
      *  Does the passed in point lie inside of the vertices passed in.  The verices are assumed to be sorted.

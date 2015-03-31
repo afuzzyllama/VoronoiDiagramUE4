@@ -13,17 +13,17 @@ public:
      *  @param  Edge        The edge of the new half edge
      (  @param  EdgeType    The edge type that this half edge represents (left or right).  The only half edges that should be "None" are the buckets in the priority queue.
      */
-    static TSharedPtr<FVoronoiDiagramHalfEdge> CreatePtr(TSharedPtr<class FVoronoiDiagramEdge> Edge, EVoronoiDiagramEdge::Type EdgeType);
+	static TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> CreatePtr(TSharedPtr<class FVoronoiDiagramEdge, ESPMode::ThreadSafe> Edge, EVoronoiDiagramEdge::Type EdgeType);
 
-    TSharedPtr<class FVoronoiDiagramEdge> Edge;
+	TSharedPtr<class FVoronoiDiagramEdge, ESPMode::ThreadSafe> Edge;
     EVoronoiDiagramEdge::Type EdgeType;
 
-    TSharedPtr<FVoronoiDiagramVertex> Vertex;
+	TSharedPtr<FVoronoiDiagramVertex, ESPMode::ThreadSafe> Vertex;
     float YStar;
 
-    TSharedPtr<FVoronoiDiagramHalfEdge> EdgeListLeft;
-    TSharedPtr<FVoronoiDiagramHalfEdge> EdgeListRight;
-    TSharedPtr<FVoronoiDiagramHalfEdge> NextInPriorityQueue;
+	TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> EdgeListLeft;
+	TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> EdgeListRight;
+	TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> NextInPriorityQueue;
 
     /*
      *  Is the edge left of the passed in point?
@@ -49,5 +49,5 @@ public:
     bool HasReferences();
 
 private:
-    FVoronoiDiagramHalfEdge(TSharedPtr<class FVoronoiDiagramEdge> InEdge, EVoronoiDiagramEdge::Type InEdgeType);
+	FVoronoiDiagramHalfEdge(TSharedPtr<class FVoronoiDiagramEdge, ESPMode::ThreadSafe> InEdge, EVoronoiDiagramEdge::Type InEdgeType);
 };

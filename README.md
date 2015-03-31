@@ -3,7 +3,7 @@ VoronoiDiagram
 
 This repository contains code that can generate a [Voronoi Diagram](http://en.wikipedia.org/wiki/Voronoi_diagram) by using an implementation of [Fortune's Algorithm](http://en.wikipedia.org/wiki/Fortune's_algorithm) for the Unreal Engine.  
 
-The second parameter of `GenerateTexture()` will run [Lloyd's Algorithm](http://en.wikipedia.org/wiki/Lloyd's_algorithm) the specified amount of times. 
+The parameter of `GenerateSites()` will run [Lloyd's Algorithm](http://en.wikipedia.org/wiki/Lloyd's_algorithm) the specified amount of times. 
 
 To use, clone the code into a directory named 'VoronoiDiagram' in your Unreal project's plugin directory.  Don't forget to add a public dependency to your project for the plugin, or else your Unreal project will not be able to find it.
 
@@ -22,7 +22,7 @@ The following code:
     }
     VoronoiDiagram.AddPoints(Points);
 	
-	FVoronoiDiagramHelper::GenerateDiagram(VoronoiDiagram, 2);
+	VoronoiDiagram->GenerateSites(2);
 	
 	for(int32 i = 0; i < VoronoiDiagram->GeneratedSites.Num(); ++i)
 	{

@@ -16,7 +16,7 @@ public:
      *  @param  Coordinate  Coordinate of the new site
      *  @return             Pointer to a the new site
      */
-    static TSharedPtr<FVoronoiDiagramSite> CreatePtr(int32 Index, FVector2D Coordinate);
+	static TSharedPtr<FVoronoiDiagramSite, ESPMode::ThreadSafe> CreatePtr(int32 Index, FVector2D Coordinate);
 
     // Needed for TSharedPtr
     virtual ~FVoronoiDiagramSite(){}
@@ -29,7 +29,7 @@ public:
     bool bIsCorner;
     bool bIsEdge;
     
-    TArray<TSharedPtr<class FVoronoiDiagramEdge>> Edges;
+	TArray<TSharedPtr<class FVoronoiDiagramEdge, ESPMode::ThreadSafe>> Edges;
 
     /*
      *  Gets the distance between the site and the passed in Voronoi Diagram point
@@ -37,7 +37,7 @@ public:
      *  @param  Point   Point to calculation distance from
      *  @return         Distance between this site and the pointer
      */
-    float GetDistanceFrom(TSharedPtr<IVoronoiDiagramPoint> Point);
+	float GetDistanceFrom(TSharedPtr<IVoronoiDiagramPoint, ESPMode::ThreadSafe> Point);
     
     void GenerateCentroid(FIntRect Bounds);
     

@@ -3,9 +3,9 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramSite.h"
 
-TSharedPtr<FVoronoiDiagramSite> FVoronoiDiagramSite::CreatePtr(int32 Index, FVector2D Coordinate)
+TSharedPtr<FVoronoiDiagramSite, ESPMode::ThreadSafe> FVoronoiDiagramSite::CreatePtr(int32 Index, FVector2D Coordinate)
 {
-    return TSharedPtr<FVoronoiDiagramSite>(new FVoronoiDiagramSite(Index, Coordinate));
+	return TSharedPtr<FVoronoiDiagramSite, ESPMode::ThreadSafe>(new FVoronoiDiagramSite(Index, Coordinate));
 }
 
 FVoronoiDiagramSite::FVoronoiDiagramSite(int32 InIndex, FVector2D InCoordinate)
@@ -15,7 +15,7 @@ FVoronoiDiagramSite::FVoronoiDiagramSite(int32 InIndex, FVector2D InCoordinate)
 , bIsEdge(false)
 {}
 
-float FVoronoiDiagramSite::GetDistanceFrom(TSharedPtr<IVoronoiDiagramPoint> Point)
+float FVoronoiDiagramSite::GetDistanceFrom(TSharedPtr<IVoronoiDiagramPoint, ESPMode::ThreadSafe> Point)
 {
     float dx, dy;
 
@@ -35,9 +35,9 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
     bool bHas_X_Max = false;
     bool bHas_Min_Y = false;
     bool bHas_Max_Y = false;
-    for(auto Itr(Edges.CreateConstIterator()); Itr; ++Itr)
+	for(auto Itr(Edges.CreateConstIterator()); Itr; ++Itr)
     {
-        TSharedPtr<FVoronoiDiagramEdge> CurrentEdge = (*Itr);
+		TSharedPtr<FVoronoiDiagramEdge, ESPMode::ThreadSafe> CurrentEdge = (*Itr);
 
         // Don't add edge that is (0,0) -> (0,0).  Increment Index if no edge is removed, otherwise the remove should do this shifting for us
         if(

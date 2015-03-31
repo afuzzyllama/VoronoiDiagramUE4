@@ -3,12 +3,12 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramEdge.h"
 
-TSharedPtr<FVoronoiDiagramEdge> FVoronoiDiagramEdge::DELETED(new FVoronoiDiagramEdge());
+TSharedPtr<FVoronoiDiagramEdge, ESPMode::ThreadSafe> FVoronoiDiagramEdge::DELETED(new FVoronoiDiagramEdge());
 
-TSharedPtr<FVoronoiDiagramEdge> FVoronoiDiagramEdge::Bisect(TSharedPtr<FVoronoiDiagramSite> SiteA, TSharedPtr<FVoronoiDiagramSite> SiteB)
+TSharedPtr<FVoronoiDiagramEdge, ESPMode::ThreadSafe> FVoronoiDiagramEdge::Bisect(TSharedPtr<FVoronoiDiagramSite, ESPMode::ThreadSafe> SiteA, TSharedPtr<FVoronoiDiagramSite, ESPMode::ThreadSafe> SiteB)
 {
     float dx, dy;
-    TSharedPtr<FVoronoiDiagramEdge> NewEdge(new FVoronoiDiagramEdge());
+	TSharedPtr<FVoronoiDiagramEdge, ESPMode::ThreadSafe> NewEdge(new FVoronoiDiagramEdge());
 
     NewEdge->LeftSite = SiteA;
     NewEdge->RightSite = SiteB;
@@ -38,7 +38,7 @@ TSharedPtr<FVoronoiDiagramEdge> FVoronoiDiagramEdge::Bisect(TSharedPtr<FVoronoiD
     return NewEdge;
 }
 
-void FVoronoiDiagramEdge::SetEndpoint(TSharedPtr<FVoronoiDiagramVertex> Vertex, EVoronoiDiagramEdge::Type EdgeType)
+void FVoronoiDiagramEdge::SetEndpoint(TSharedPtr<FVoronoiDiagramVertex, ESPMode::ThreadSafe> Vertex, EVoronoiDiagramEdge::Type EdgeType)
 {
     check(EdgeType != EVoronoiDiagramEdge::None);
     
@@ -57,7 +57,7 @@ void FVoronoiDiagramEdge::GenerateClippedEndPoints(FIntRect Bounds)
     FVector2D MinimumValues(0, 0);
     FVector2D MaximumValues(Bounds.Width(), Bounds.Height());
 
-    TSharedPtr<FVoronoiDiagramVertex> VertexA, VertexB;
+	TSharedPtr<FVoronoiDiagramVertex, ESPMode::ThreadSafe> VertexA, VertexB;
     FVector2D PointA, PointB;
 
     if (a == 1.0f && b >= 0.0f)

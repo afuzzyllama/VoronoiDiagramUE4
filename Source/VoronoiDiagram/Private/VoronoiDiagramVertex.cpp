@@ -3,15 +3,15 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramVertex.h"
 
-TSharedPtr<FVoronoiDiagramVertex> FVoronoiDiagramVertex::CreatePtr(int32 Index, FVector2D Coordinate)
+TSharedPtr<FVoronoiDiagramVertex, ESPMode::ThreadSafe> FVoronoiDiagramVertex::CreatePtr(int32 Index, FVector2D Coordinate)
 {
-    return TSharedPtr<FVoronoiDiagramVertex>(new FVoronoiDiagramVertex(Index, Coordinate));
+	return TSharedPtr<FVoronoiDiagramVertex, ESPMode::ThreadSafe>(new FVoronoiDiagramVertex(Index, Coordinate));
 }
 
-TSharedPtr<FVoronoiDiagramVertex> FVoronoiDiagramVertex::Intersect(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdgeA, TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdgeB)
+TSharedPtr<FVoronoiDiagramVertex, ESPMode::ThreadSafe> FVoronoiDiagramVertex::Intersect(TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdgeA, TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdgeB)
 {
-    TSharedPtr<FVoronoiDiagramEdge> EdgeA, EdgeB, Edge;
-    TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge;
+	TSharedPtr<FVoronoiDiagramEdge, ESPMode::ThreadSafe> EdgeA, EdgeB, Edge;
+	TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdge;
     float Determinant, IntersectionX, IntersectionY;
     bool bRightOfSite;
     

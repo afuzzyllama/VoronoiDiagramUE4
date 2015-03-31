@@ -17,13 +17,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogVoronoiDiagram, Log, All);
 class FVoronoiDiagramEdgeList
 {
 public:
-    TArray<TSharedPtr<FVoronoiDiagramHalfEdge>> Hash;
-    TSharedPtr<FVoronoiDiagramHalfEdge> LeftEnd;
-    TSharedPtr<FVoronoiDiagramHalfEdge> RightEnd;
-    TSharedPtr<FVector2D> MinimumValues;
-    TSharedPtr<FVector2D> DeltaValues;
+    TArray<TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe>> Hash;
+	TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> LeftEnd;
+	TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> RightEnd;
+	TSharedPtr<FVector2D, ESPMode::ThreadSafe> MinimumValues;
+	TSharedPtr<FVector2D, ESPMode::ThreadSafe> DeltaValues;
     
-    FVoronoiDiagramEdgeList(int32 NumberOfSites, TSharedPtr<FVector2D> InMinimumValues, TSharedPtr<FVector2D> InDeltaValues)
+	FVoronoiDiagramEdgeList(int32 NumberOfSites, TSharedPtr<FVector2D, ESPMode::ThreadSafe> InMinimumValues, TSharedPtr<FVector2D, ESPMode::ThreadSafe> InDeltaValues)
     : MinimumValues(InMinimumValues)
     , DeltaValues(InDeltaValues)
     {
@@ -45,7 +45,7 @@ public:
         Hash[Hash.Num() - 1] = RightEnd;
     }
     
-    void Insert(TSharedPtr<FVoronoiDiagramHalfEdge> LeftBound, TSharedPtr<FVoronoiDiagramHalfEdge> NewHalfEdge)
+	void Insert(TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> LeftBound, TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> NewHalfEdge)
     {
         NewHalfEdge->EdgeListLeft = LeftBound;
         NewHalfEdge->EdgeListRight = LeftBound->EdgeListRight;
@@ -53,7 +53,7 @@ public:
         LeftBound->EdgeListRight = NewHalfEdge;
     }
     
-    void Delete(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
+	void Delete(TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdge)
     {
         HalfEdge->EdgeListLeft->EdgeListRight = HalfEdge->EdgeListRight;
         HalfEdge->EdgeListRight->EdgeListLeft = HalfEdge->EdgeListLeft;
@@ -62,9 +62,9 @@ public:
         HalfEdge->EdgeListRight = nullptr;
     }
 
-    TSharedPtr<FVoronoiDiagramHalfEdge> GetFromHash(int32 Bucket)
+	TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> GetFromHash(int32 Bucket)
     {
-        TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge;
+		TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdge;
         
         if(Bucket < 0 || Bucket >= Hash.Num())
         {
@@ -84,10 +84,10 @@ public:
         return HalfEdge;
     }
     
-    TSharedPtr<FVoronoiDiagramHalfEdge> GetLeftBoundFrom(FVector2D Point)
+	TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> GetLeftBoundFrom(FVector2D Point)
     {
         int32 Bucket;
-        TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge;
+		TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdge;
         
         Bucket = (Point.X - MinimumValues->X) / DeltaValues->X * Hash.Num();
         
@@ -173,11 +173,11 @@ class FVoronoiDiagramPriorityQueue
 public:
     int32 MinimumBucket;
     int32 Count;
-    TArray<TSharedPtr<FVoronoiDiagramHalfEdge>> Hash;
-    TSharedPtr<FVector2D> MinimumValues;
-    TSharedPtr<FVector2D> DeltaValues;
+	TArray<TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe>> Hash;
+	TSharedPtr<FVector2D, ESPMode::ThreadSafe> MinimumValues;
+	TSharedPtr<FVector2D, ESPMode::ThreadSafe> DeltaValues;
     
-    FVoronoiDiagramPriorityQueue(int32 NumberOfSites, TSharedPtr<FVector2D> InMinimumValues, TSharedPtr<FVector2D> InDeltaValues)
+	FVoronoiDiagramPriorityQueue(int32 NumberOfSites, TSharedPtr<FVector2D, ESPMode::ThreadSafe> InMinimumValues, TSharedPtr<FVector2D, ESPMode::ThreadSafe> InDeltaValues)
     : MinimumBucket(0)
     , Count(0)
     , MinimumValues(InMinimumValues)
@@ -191,7 +191,7 @@ public:
         }
     }
 
-    int32 GetBucket(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
+	int32 GetBucket(TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdge)
     {
         int32 Bucket;
         
@@ -209,9 +209,9 @@ public:
         return Bucket;
     }
     
-    void Insert(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
+	void Insert(TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdge)
     {
-        TSharedPtr<FVoronoiDiagramHalfEdge> Previous, Next;
+		TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> Previous, Next;
         int32 InsertionBucket = GetBucket(HalfEdge);
         
         if(InsertionBucket < MinimumBucket)
@@ -239,9 +239,9 @@ public:
         Count++;
     }
     
-    void Delete(TSharedPtr<FVoronoiDiagramHalfEdge> HalfEdge)
+	void Delete(TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdge)
     {
-        TSharedPtr<FVoronoiDiagramHalfEdge> Previous;
+		TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> Previous;
         int32 RemovalBucket = GetBucket(HalfEdge);
         
         if(HalfEdge->Vertex.IsValid())
@@ -283,9 +283,9 @@ public:
         );
     }
     
-    TSharedPtr<FVoronoiDiagramHalfEdge> RemoveAndReturnMinimum()
+	TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> RemoveAndReturnMinimum()
     {
-        TSharedPtr<FVoronoiDiagramHalfEdge> MinEdge;
+		TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> MinEdge;
 
         MinEdge = Hash[MinimumBucket]->NextInPriorityQueue;
         Hash[MinimumBucket]->NextInPriorityQueue = MinEdge->NextInPriorityQueue;
@@ -325,7 +325,7 @@ public:
     /*
      *  Runs Fortune's Algorithm to generate sites with edges for the diagram
      */
-	void GenerateSites();
+	void GenerateSites(int32 RelaxationCycles);
     
     /*
      *  Bounds of the Voronoi Diagram
@@ -335,18 +335,23 @@ public:
 	/*
 	 * Generated sites.  Filled after GenerateSites() is called
 	 */
-	TArray<TSharedPtr<FVoronoiDiagramGeneratedSite>> GeneratedSites;
+	TArray<FVoronoiDiagramGeneratedSite> GeneratedSites;
 
 private:
-    /*
-     *  Stored added points as Sites.  Ordered lexigraphically by y and then x
+	/*
+	*  Original points added by the user.  Ordered lexigraphically by y and then x
+	*/
+	TArray<FVector2D> OriginalSites;
+	
+	/*
+     *  Stored added points as Sites that are currently being processed.  Ordered lexigraphically by y and then x
      */
-    TArray<TSharedPtr<class FVoronoiDiagramSite>> Sites;
+	TArray<TSharedPtr<class FVoronoiDiagramSite, ESPMode::ThreadSafe>> Sites;
     
     /*
      *  Stores the bottom most site when running GenerateEdges
      */
-    TSharedPtr<class FVoronoiDiagramSite> BottomMostSite;
+	TSharedPtr<class FVoronoiDiagramSite, ESPMode::ThreadSafe> BottomMostSite;
     
     /*
      *  Stores the current site index when running GenerateEdges
@@ -356,32 +361,37 @@ private:
     /*
      *  Stores the minimum values of the points in site array.  Declared as pointer because these values need to be shared between some data structures.
      */
-    TSharedPtr<FVector2D> MinValues;
+	TSharedPtr<FVector2D, ESPMode::ThreadSafe> MinValues;
     
     /*
      *  Stores the maximum values of the points in the site array.  Declared as pointer because these values need to be shared between some data structures.
      */
-    TSharedPtr<FVector2D> MaxValues;
+	TSharedPtr<FVector2D, ESPMode::ThreadSafe> MaxValues;
     
     /*
      *  Stores the delta values of the minimum and maximum values. Declared as pointer because these values need to be shared between some data structures.
      */
-    TSharedPtr<FVector2D> DeltaValues;
+	TSharedPtr<FVector2D, ESPMode::ThreadSafe> DeltaValues;
+
+	/*
+	 *	Sorts sites and calculates MinValues, MaxValues, and DeltaValues
+	 */
+	void SortSitesAndSetValues();
 
     /*
      *  Returns the next site and increments CurrentSiteIndex
      */
-    TSharedPtr<class FVoronoiDiagramSite> GetNextSite();
+	TSharedPtr<class FVoronoiDiagramSite, ESPMode::ThreadSafe> GetNextSite();
     
     /*
      *  Returns the left region in relation to a half edge
      */
-    TSharedPtr<class FVoronoiDiagramSite> GetLeftRegion(TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdge);
+	TSharedPtr<class FVoronoiDiagramSite, ESPMode::ThreadSafe> GetLeftRegion(TSharedPtr<class FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdge);
     
     /*
      *  Returns the right region in relation to a half edge
      */
-    TSharedPtr<class FVoronoiDiagramSite> GetRightRegion(TSharedPtr<class FVoronoiDiagramHalfEdge> HalfEdge);
+	TSharedPtr<class FVoronoiDiagramSite, ESPMode::ThreadSafe> GetRightRegion(TSharedPtr<class FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> HalfEdge);
     
     friend class FVoronoiDiagramHelper;
 };
@@ -389,11 +399,7 @@ private:
 class VORONOIDIAGRAM_API FVoronoiDiagramHelper
 {
 public:
-	/*
-	* Generates a Voronoi Diagram with the passed in numbers of relaxation cycles.  Assumes that points have already been added to Voronoi Diagram.
-	*/
-	static void GenerateDiagram(TSharedPtr<FVoronoiDiagram> VoronoiDiagram, int32 RelaxationCycles);
-	
+		
 	/*
 	* Creates an array of colors of the Voronoi Diagram to the supplied TArray<FColor>.  Assumes that diagram has been run through GenerateDiagram
 	* This can be safely called from a thread

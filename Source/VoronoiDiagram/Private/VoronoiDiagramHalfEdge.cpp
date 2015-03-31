@@ -3,14 +3,14 @@
 #include "VoronoiDiagramPrivatePCH.h"
 #include "VoronoiDiagramHalfEdge.h"
 
-TSharedPtr<FVoronoiDiagramHalfEdge> FVoronoiDiagramHalfEdge::CreatePtr(TSharedPtr<FVoronoiDiagramEdge> Edge, EVoronoiDiagramEdge::Type EdgeType)
+TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe> FVoronoiDiagramHalfEdge::CreatePtr(TSharedPtr<FVoronoiDiagramEdge, ESPMode::ThreadSafe> Edge, EVoronoiDiagramEdge::Type EdgeType)
 {
-    return TSharedPtr<FVoronoiDiagramHalfEdge>(new FVoronoiDiagramHalfEdge(Edge, EdgeType));
+	return TSharedPtr<FVoronoiDiagramHalfEdge, ESPMode::ThreadSafe>(new FVoronoiDiagramHalfEdge(Edge, EdgeType));
 }
 
 bool FVoronoiDiagramHalfEdge::IsLeftOf(FVector2D Point)
 {
-    TSharedPtr<FVoronoiDiagramSite> TopSite;
+	TSharedPtr<FVoronoiDiagramSite, ESPMode::ThreadSafe> TopSite;
     bool bAbove, bFast, bRightOfSite;
     float dxp, dyp, dxs;
     
@@ -85,7 +85,7 @@ bool FVoronoiDiagramHalfEdge::HasReferences()
 }
 
 // Never want to create a half edge directly since we are dealing with pointers
-FVoronoiDiagramHalfEdge::FVoronoiDiagramHalfEdge(TSharedPtr<FVoronoiDiagramEdge> InEdge, EVoronoiDiagramEdge::Type InEdgeType)
+FVoronoiDiagramHalfEdge::FVoronoiDiagramHalfEdge(TSharedPtr<FVoronoiDiagramEdge, ESPMode::ThreadSafe> InEdge, EVoronoiDiagramEdge::Type InEdgeType)
 : Edge(InEdge)
 , EdgeType(InEdgeType)
 , Vertex(nullptr)

@@ -324,226 +324,19 @@ public:
     
     /*
      *  Runs Fortune's Algorithm to generate sites with edges for the diagram
-     *
-     *  @param  OutSites    Array to fill with sites
      */
-    template<class T>
-    void GenerateSites(TArray<TSharedPtr<T>>& OutSites)
-    {
-        // Fortune's Algorithm
-        int32 NumGeneratedEdges = 0;
-        int32 NumGeneratedVertices = 0;
-        CurrentSiteIndex = 0;
-
-        FVoronoiDiagramPriorityQueue PriorityQueue(Sites.Num(), MinValues, DeltaValues);
-        FVoronoiDiagramEdgeList EdgeList(Sites.Num(), MinValues, DeltaValues);
-
-        FVector2D CurrentIntersectionStar;
-        TSharedPtr<FVoronoiDiagramSite> CurrentSite, BottomSite, TopSite, TempSite;
-        TSharedPtr<FVoronoiDiagramVertex> v, Vertex;
-        TSharedPtr<FVoronoiDiagramHalfEdge> LeftBound, RightBound, LeftLeftBound, RightRightBound, Bisector;
-        TSharedPtr<FVoronoiDiagramEdge> Edge;
-        EVoronoiDiagramEdge::Type EdgeType;
-        
-        TArray<TSharedPtr<FVoronoiDiagramEdge>> GeneratedEdges;
-
-        bool bDone = false;
-        BottomMostSite = GetNextSite();
-        CurrentSite = GetNextSite();
-        while(!bDone)
-        {
-            if(!PriorityQueue.IsEmpty())
-            {
-                CurrentIntersectionStar = PriorityQueue.GetMinimumBucketFirstPoint();
-            }
-            
-            if(
-                CurrentSite.IsValid() &&
-                (
-                    PriorityQueue.IsEmpty() ||
-                    CurrentSite->GetCoordinate().Y < CurrentIntersectionStar.Y ||
-                    (
-                        FMath::IsNearlyEqual(CurrentSite->GetCoordinate().Y, CurrentIntersectionStar.Y) &&
-                        CurrentSite->GetCoordinate().X < CurrentIntersectionStar.X
-                    )
-                )
-            )
-            {
-                // Current processed site is the smallest
-                LeftBound = EdgeList.GetLeftBoundFrom(CurrentSite->GetCoordinate());
-                RightBound = LeftBound->EdgeListRight;
-                BottomSite = GetRightRegion(LeftBound);
-
-                Edge = FVoronoiDiagramEdge::Bisect(BottomSite, CurrentSite);
-                Edge->Index = NumGeneratedEdges;
-                NumGeneratedEdges++;
-                
-                GeneratedEdges.Add(Edge);
-                
-                Bisector = FVoronoiDiagramHalfEdge::CreatePtr(Edge, EVoronoiDiagramEdge::Left);
-                EdgeList.Insert(LeftBound, Bisector);
-                
-                Vertex = FVoronoiDiagramVertex::Intersect(LeftBound, Bisector);
-                if(Vertex.IsValid())
-                {
-                    PriorityQueue.Delete(LeftBound);
-                    
-                    LeftBound->Vertex = Vertex;
-                    LeftBound->YStar = Vertex->GetCoordinate().Y + CurrentSite->GetDistanceFrom(Vertex);
-
-                    PriorityQueue.Insert(LeftBound);
-                }
-                
-                LeftBound = Bisector;
-                Bisector = FVoronoiDiagramHalfEdge::CreatePtr(Edge, EVoronoiDiagramEdge::Right);
-                
-                EdgeList.Insert(LeftBound, Bisector);
-                
-                Vertex = FVoronoiDiagramVertex::Intersect(Bisector, RightBound);
-                if(Vertex.IsValid())
-                {
-                    Bisector->Vertex = Vertex;
-                    Bisector->YStar = Vertex->GetCoordinate().Y + CurrentSite->GetDistanceFrom(Vertex);
-
-                    PriorityQueue.Insert(Bisector);
-                }
-                
-                CurrentSite = GetNextSite();
-            }
-            else if(PriorityQueue.IsEmpty() == false)
-            {
-                // Current intersection is the smallest
-                LeftBound = PriorityQueue.RemoveAndReturnMinimum();
-                LeftLeftBound = LeftBound->EdgeListLeft;
-                RightBound = LeftBound->EdgeListRight;
-                RightRightBound = RightBound->EdgeListRight;
-                BottomSite = GetLeftRegion(LeftBound);
-                TopSite = GetRightRegion(RightBound);
-                
-                // These three sites define a Delaunay triangle
-                // Bottom, Top, EdgeList.GetRightRegion(RightBound);
-    //            UE_LOG(LogVoronoiDiagram, Log, TEXT("Delaunay triagnle: (%f, %f), (%f, %f), (%f, %f)"),
-    //                Bottom->Coordinate.X, Bottom->Coordinate.Y,
-    //                Top->Coordinate.X, Top->Coordinate.Y,
-    //                EdgeList.GetRightRegion(LeftBound)->Coordinate.X,
-    //                EdgeList.GetRightRegion(LeftBound)->Coordinate.Y);
-                
-                v = LeftBound->Vertex;
-                v->Index = NumGeneratedVertices;
-                NumGeneratedVertices++;
-                
-                LeftBound->Edge->SetEndpoint(v, LeftBound->EdgeType);
-                RightBound->Edge->SetEndpoint(v, RightBound->EdgeType);
-                
-                EdgeList.Delete(LeftBound);
-                
-                PriorityQueue.Delete(RightBound);
-                EdgeList.Delete(RightBound);
-                
-                EdgeType = EVoronoiDiagramEdge::Left;
-                if(BottomSite->GetCoordinate().Y > TopSite->GetCoordinate().Y)
-                {
-                    TempSite = BottomSite;
-                    BottomSite = TopSite;
-                    TopSite = TempSite;
-                    EdgeType = EVoronoiDiagramEdge::Right;
-                }
-                
-                Edge = FVoronoiDiagramEdge::Bisect(BottomSite, TopSite);
-                Edge->Index = NumGeneratedEdges;
-                NumGeneratedEdges++;
-                
-                GeneratedEdges.Add(Edge);
-                
-                Bisector = FVoronoiDiagramHalfEdge::CreatePtr(Edge, EdgeType);
-                EdgeList.Insert(LeftLeftBound, Bisector);
-                
-                if(EdgeType == EVoronoiDiagramEdge::Left)
-                {
-                    Edge->SetEndpoint(v, EVoronoiDiagramEdge::Right);
-                }
-                else
-                {
-                    Edge->SetEndpoint(v, EVoronoiDiagramEdge::Left);
-                }
-                
-                Vertex = FVoronoiDiagramVertex::Intersect(LeftLeftBound, Bisector);
-                if(Vertex.IsValid())
-                {
-                    PriorityQueue.Delete(LeftLeftBound);
-
-                    LeftLeftBound->Vertex = Vertex;
-                    LeftLeftBound->YStar = Vertex->GetCoordinate().Y + BottomSite->GetDistanceFrom(Vertex);
-
-                    PriorityQueue.Insert(LeftLeftBound);
-                }
-                
-                Vertex = FVoronoiDiagramVertex::Intersect(Bisector, RightRightBound);
-                if(Vertex.IsValid())
-                {
-                    Bisector->Vertex = Vertex;
-                    Bisector->YStar = Vertex->GetCoordinate().Y + BottomSite->GetDistanceFrom(Vertex);
-                    
-                    PriorityQueue.Insert(Bisector);
-                }
-            }
-            else
-            {
-                bDone = true;
-            }
-        }
-        
-        OutSites.Empty();
-        // Bound the edges of the diagram
-        for(auto Itr(GeneratedEdges.CreateConstIterator()); Itr; ++Itr)
-        {
-            TSharedPtr<FVoronoiDiagramEdge> Edge = (*Itr);
-            Edge->GenerateClippedEndPoints(Bounds);
-        }
-        
-        for(auto Itr(Sites.CreateConstIterator()); Itr; ++Itr)
-        {
-            TSharedPtr<FVoronoiDiagramSite> Site = (*Itr);
-            Site->GenerateCentroid(Bounds);
-        }
-        
-        for(auto SiteItr(Sites.CreateConstIterator()); SiteItr; ++SiteItr)
-        {
-            TSharedPtr<FVoronoiDiagramSite> Site = (*SiteItr);
-            TSharedPtr<T> GeneratedSite( new T(Site->Index, Site->GetCoordinate(), Site->Centroid, FColor::White, Site->bIsCorner, Site->bIsEdge));
-            GeneratedSite->Vertices.Append(Site->Vertices);
-            
-            for(auto EdgeItr(Site->Edges.CreateConstIterator()); EdgeItr; ++EdgeItr)
-            {
-                TSharedPtr<FVoronoiDiagramEdge> Edge = (*EdgeItr);
-                GeneratedSite->Edges.Add(FVoronoiDiagramGeneratedEdge(Edge->Index, Edge->LeftClippedEndPoint, Edge->RightClippedEndPoint));
-        
-                if(Edge->LeftSite.IsValid())
-                {
-                    GeneratedSite->NeighborSites.Add(Edge->LeftSite->Index);
-                }
-                
-                if(Edge->RightSite.IsValid())
-                {
-                    GeneratedSite->NeighborSites.Add(Edge->RightSite->Index);
-                }
-            }
-            OutSites.Add(GeneratedSite);
-            
-            // Finished with the edges, remove the references so they can be removed at the end of the method
-            Site->Edges.Empty();
-        }
-        
-        
-        // Clean up
-        BottomMostSite.Reset();
-    }
+	void GenerateSites();
     
     /*
      *  Bounds of the Voronoi Diagram
      */
     FIntRect Bounds;
-    
+
+	/*
+	 * Generated sites.  Filled after GenerateSites() is called
+	 */
+	TArray<TSharedPtr<FVoronoiDiagramGeneratedSite>> GeneratedSites;
+
 private:
     /*
      *  Stored added points as Sites.  Ordered lexigraphically by y and then x
@@ -597,22 +390,27 @@ class VORONOIDIAGRAM_API FVoronoiDiagramHelper
 {
 public:
 	/*
-	* Creates an array of colors of the Voronoi Diagram to the supplied TArray<FColor>.  Assumes that points have already been added to Voronoi Diagram.
-	* This can be safely called from a thread
+	* Generates a Voronoi Diagram with the passed in numbers of relaxation cycles.  Assumes that points have already been added to Voronoi Diagram.
 	*/
-	static void GenerateColorArray(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, TArray<FColor>& ColorData);
+	static void GenerateDiagram(TSharedPtr<FVoronoiDiagram> VoronoiDiagram, int32 RelaxationCycles);
 	
 	/*
-     *  Creates a texture images of the Voronoi Diagram in the passed texture.  Assumes that points have already been added to the Voronoi Diagram
+	* Creates an array of colors of the Voronoi Diagram to the supplied TArray<FColor>.  Assumes that diagram has been run through GenerateDiagram
+	* This can be safely called from a thread
+	*/
+	static void GenerateColorArray(TSharedPtr<FVoronoiDiagram> VoronoiDiagram, TArray<FColor>& ColorData);
+	
+	/*
+     *  Creates a texture images of the Voronoi Diagram in the passed texture.  Assumes that diagram has been run through GenerateDiagram
 	 *  This has to be called from the game thread
      */
-    static void GenerateTexture(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, class UTexture2D*& GeneratedTexture);
+	static void GenerateTexture(TSharedPtr<FVoronoiDiagram> VoronoiDiagram, class UTexture2D*& GeneratedTexture);
 			
 	/*
-	 * Creates a PNG file of the Voronoi Diagram to the supplied TArray<uint8>.  Assumes that points have already been added to Voronoi Diagram 
+	 * Creates a PNG file of the Voronoi Diagram to the supplied TArray<uint8>.  Assumes that diagram has been run through GenerateDiagram
 	 * This has to be called from the game thread
 	 */
-	static void GeneratePNG(FVoronoiDiagram VoronoiDiagram, int32 RelaxationCycles, TArray<uint8>& PNGData);
+	static void GeneratePNG(TSharedPtr<FVoronoiDiagram> VoronoiDiagram, TArray<uint8>& PNGData);
 
     /*
      *  Does the passed in point lie inside of the vertices passed in.  The verices are assumed to be sorted.

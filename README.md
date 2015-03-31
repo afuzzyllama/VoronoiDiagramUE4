@@ -9,11 +9,11 @@ To use, clone the code into a directory named 'VoronoiDiagram' in your Unreal pr
 
 The following code:
 
-    #include"VoronoiDiagram.h"
+    #include "VoronoiDiagram.h"
 
     UTexture2D* MyTexture;
     
-    FVoronoiDiagram VoronoiDiagram(FIntRect(0, 0, 4096, 4096));
+    TSharedPtr<FVoronoiDiagram> VoronoiDiagram(new FVoronoiDiagram(FIntRect(0, 0, 4096, 4096)));
     TArray<FIntPoint> Points;
     
     for(int32 i = 0; i < 1000; ++i)
@@ -21,8 +21,15 @@ The following code:
         Points.AddUnique(FIntPoint(FMath::RandRange(0, 4095), FMath::RandRange(0, 4095)));
     }
     VoronoiDiagram.AddPoints(Points);
-
-    FVoronoiDiagramHelper::GenerateTexture(VoronoiDiagram, 2, MyTexture);
+	
+	FVoronoiDiagramHelper::GenerateDiagram(VoronoiDiagram, 2);
+	
+	for(int32 i = 0; i < VoronoiDiagram->GeneratedSites.Num(); ++i)
+	{
+		VoronoiDiagram->GeneratedSites[i].Color = FColor::MakeRandomColor();
+	}
+	
+    FVoronoiDiagramHelper::GenerateTexture(VoronoiDiagram, MyTexture);
     
 Will create a texture similar to:
 

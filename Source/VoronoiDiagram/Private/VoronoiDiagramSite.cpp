@@ -31,7 +31,8 @@ void FVoronoiDiagramSite::GenerateCentroid(FIntRect Bounds)
 
     // Gather all vertices from the edges
     // Solve for corners
-    bool bHas_X_Min = false;
+    
+	bool bHas_X_Min = false;
     bool bHas_X_Max = false;
     bool bHas_Min_Y = false;
     bool bHas_Max_Y = false;

@@ -335,7 +335,7 @@ public:
 	/*
 	 * Generated sites.  Filled after GenerateSites() is called
 	 */
-	TArray<FVoronoiDiagramGeneratedSite> GeneratedSites;
+	TMap<int32, FVoronoiDiagramGeneratedSite> GeneratedSites;
 
 private:
 	/*
